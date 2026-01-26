@@ -1,26 +1,12 @@
-# -*- coding: utf-8 -*-
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Query, HTTPException, Depends
 from typing import Optional
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Body, BackgroundTasks, Query
+from sqlalchemy.ext.asyncio import AsyncSession
 from backend.app.services.blive_service import blive_service
 from backend.app.schemas import schemas
+from backend.app.crud import crud
+from backend.database.db import get_db
 
 router = APIRouter()
-
-from backend.app.database.db import AsyncSessionLocal
-from backend.app.crud import crud
-
-# ----------------- 用户管理接口 -----------------
-
-@router.post("/users")
-async def create_user(user: schemas.UserCreate):
-    """
-    注册/更新用户信息 (用户名和 SESSDATA)
-    """
-    async with AsyncSessionLocal() as db:
-        db_user = await crud.create_user(db, user)
-        return {"message": f"User {db_user.user_name} saved successfully", "user_name": db_user.user_name}
-
-# ----------------- WebSocket 接口 -----------------
 
 @router.websocket("/ws/listen/{room_id}")
 async def websocket_listen_endpoint(
@@ -29,37 +15,26 @@ async def websocket_listen_endpoint(
     user_name: Optional[str] = Query(None, description="用户名称，用于查找数据库中的 Cookie")
 ):
     """
-    WebSocket 端点：实时接收所有类型消息（弹幕、礼物、SC、上舰）
+    WebSocket 监听接口
     """
     await blive_service.connect(websocket, room_id, user_name)
     try:
         while True:
-            # 保持连接，接收客户端消息（如果有的话，比如心跳）
             await websocket.receive_text()
     except WebSocketDisconnect:
         blive_service.disconnect(websocket, room_id)
 
-# ----------------- RESTful 控制接口 -----------------
-
-@router.post("/listen/start")
-async def start_listen(request: schemas.ListenRequest, background_tasks: BackgroundTasks):
-    """
-    接口: 启动监听任务 (通常由 WebSocket 自动触发，也可手动调用)
-    """
-    room_id_int = int(request.room_id)
-    background_tasks.add_task(blive_service.start_listen, room_id_int, request.user_name)
-    
-    return {
-        "message": f"Listening started for room {request.room_id}",
-        "stream_url": f"/api/ws/listen/{request.room_id}",
-        "protocol": "websocket"
-    }
-
-@router.post("/listen/stop")
+@router.post("/listen/stop", summary="停止监听直播间")
 async def stop_listen(request: schemas.ListenRequest):
     """
-    接口: 停止监听任务
+    停止监听指定房间
     """
-    room_id_int = int(request.room_id)
-    await blive_service.stop_listen(room_id_int)
-    return {"message": f"Listening stopped for room {request.room_id}"}
+    await blive_service.stop_listen(int(request.room_id))
+    return {"status": "success", "message": f"Stopped listening to room {request.room_id}"}
+
+@router.post("/users", response_model=schemas.UserResponse, summary="注册/更新用户 (SESSDATA)")
+async def create_user(user: schemas.UserCreate, db: AsyncSession = Depends(get_db)):
+    """
+    创建或更新用户信息 (主要是 SESSDATA)
+    """
+    return await crud.create_user(db, user)

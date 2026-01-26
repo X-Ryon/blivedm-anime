@@ -1,0 +1,58 @@
+2026-01-26 22:41:08.415 | INFO     | - | Started server process [28932]
+2026-01-26 22:41:08.417 | INFO     | - | Waiting for application startup.
+2026-01-26 22:41:08.423 | INFO     | - | Application startup complete.
+2026-01-26 22:41:29.181 | INFO     | - | Shutting down
+2026-01-26 22:41:29.289 | INFO     | - | Waiting for application shutdown.
+2026-01-26 22:41:29.290 | INFO     | - | Application shutdown complete.
+2026-01-26 22:41:29.290 | INFO     | - | Finished server process [28932]
+2026-01-26 22:42:05.851 | INFO     | - | Started server process [34696]
+2026-01-26 22:42:05.851 | INFO     | - | Waiting for application startup.
+2026-01-26 22:42:05.857 | INFO     | - | Application startup complete.
+2026-01-26 22:42:57.975 | INFO     | - | 127.0.0.1:12641 - "HEAD /docs HTTP/1.1" 200
+2026-01-26 22:43:21.000 | INFO     | - | Shutting down
+2026-01-26 22:43:21.102 | INFO     | - | Waiting for application shutdown.
+2026-01-26 22:43:21.103 | INFO     | - | Application shutdown complete.
+2026-01-26 22:43:21.103 | INFO     | - | Finished server process [34696]
+2026-01-26 22:43:22.385 | INFO     | - | Started server process [5236]
+2026-01-26 22:43:22.386 | INFO     | - | Waiting for application startup.
+2026-01-26 22:43:22.391 | INFO     | - | Application startup complete.
+2026-01-26 22:45:02.900 | INFO     | f2fe0c56-e7d2-467d-9607-7cd1e473044c | Request started: HEAD http://127.0.0.1:8000/docs
+2026-01-26 22:45:02.900 | INFO     | - | 127.0.0.1:1426 - "HEAD /docs HTTP/1.1" 200
+2026-01-26 22:49:00.128 | INFO     | - | Started server process [13896]
+2026-01-26 22:49:00.128 | INFO     | - | Waiting for application startup.
+2026-01-26 22:49:00.134 | INFO     | - | Application startup complete.
+2026-01-26 22:49:17.276 | INFO     | - | Started server process [35212]
+2026-01-26 22:49:17.276 | INFO     | - | Waiting for application startup.
+2026-01-26 22:49:17.283 | INFO     | - | Application startup complete.
+2026-01-26 22:49:24.333 | INFO     | e0e8dd5e-0a5d-44d1-9930-e94dfe43b551 | Request started: GET http://127.0.0.1:8000/docs
+2026-01-26 22:49:24.335 | INFO     | - | 127.0.0.1:7275 - "GET /docs HTTP/1.1" 200
+2026-01-26 22:49:24.401 | INFO     | c6baefde-ac90-4b80-bb1e-bc0f334c90f5 | Request started: GET http://127.0.0.1:8000/openapi.json
+2026-01-26 22:49:24.412 | INFO     | - | 127.0.0.1:7275 - "GET /openapi.json HTTP/1.1" 200
+2026-01-26 22:55:12.600 | INFO     | - | Started server process [8388]
+2026-01-26 22:55:12.601 | INFO     | - | Waiting for application startup.
+2026-01-26 22:55:12.605 | INFO     | - | Application startup complete.
+2026-01-26 22:55:20.235 | INFO     | 76e5c0a9-8ed0-4f4e-8f19-a436dd7e04ee | Request started: GET http://127.0.0.1:8000/docs
+2026-01-26 22:55:20.235 | INFO     | - | 127.0.0.1:8740 - "GET /docs HTTP/1.1" 200
+2026-01-26 22:55:20.298 | INFO     | 1f6bc7f0-4346-4ab7-9861-edc152aee97e | Request started: GET http://127.0.0.1:8000/openapi.json
+2026-01-26 22:55:20.309 | INFO     | - | 127.0.0.1:8740 - "GET /openapi.json HTTP/1.1" 200
+2026-01-26 22:57:34.348 | INFO     | - | Started server process [19136]
+2026-01-26 22:57:34.349 | INFO     | - | Waiting for application startup.
+2026-01-26 22:57:34.354 | INFO     | - | Application startup complete.
+2026-01-26 22:57:46.377 | INFO     | 3069d2e8-a790-4a54-bdb2-2bea1f74e89e | Request started: POST http://127.0.0.1:8000/api/v1/listen/start
+2026-01-26 22:57:46.383 | INFO     | - | 127.0.0.1:2468 - "POST /api/v1/listen/start HTTP/1.1" 200
+2026-01-26 22:58:48.057 | INFO     | e7bb22ef-67c6-4d4d-9582-3e789696b4d8 | Request started: POST http://127.0.0.1:8000/api/v1/listen/stop
+2026-01-26 22:58:48.061 | INFO     | - | 127.0.0.1:3269 - "POST /api/v1/listen/stop HTTP/1.1" 200
+2026-01-26 22:58:49.554 | INFO     | 12b0048f-dcbd-4fa2-854a-f7d77534516d | Request started: POST http://127.0.0.1:8000/api/v1/listen/stop
+2026-01-26 22:58:49.557 | INFO     | - | 127.0.0.1:3269 - "POST /api/v1/listen/stop HTTP/1.1" 200
+2026-01-26 22:58:57.590 | INFO     | 91f23ccc-e64c-485f-b42c-5818c812eb90 | Request started: POST http://127.0.0.1:8000/api/v1/listen/start
+2026-01-26 22:58:57.591 | INFO     | - | 127.0.0.1:10805 - "POST /api/v1/listen/start HTTP/1.1" 200
+2026-01-26 23:00:09.736 | INFO     | 14f434d9-f54c-44f7-b374-0be4f4c2d3d4 | Request started: POST http://127.0.0.1:8000/api/v1/listen/stop
+2026-01-26 23:00:09.740 | INFO     | - | 127.0.0.1:8737 - "POST /api/v1/listen/stop HTTP/1.1" 200
+2026-01-26 23:00:15.974 | INFO     | a84e4ea3-fa3b-4f75-958f-63001048a0e7 | Request started: POST http://127.0.0.1:8000/api/v1/listen/start
+2026-01-26 23:00:15.977 | INFO     | - | 127.0.0.1:13173 - "POST /api/v1/listen/start HTTP/1.1" 200
+2026-01-26 23:01:13.798 | INFO     | d45bbde6-269b-4e60-b54c-9b564726d106 | Request started: POST http://127.0.0.1:8000/api/v1/listen/stop
+2026-01-26 23:01:13.801 | INFO     | - | 127.0.0.1:11965 - "POST /api/v1/listen/stop HTTP/1.1" 200
+2026-01-26 23:02:29.794 | INFO     | - | Shutting down
+2026-01-26 23:02:29.897 | INFO     | - | Waiting for application shutdown.
+2026-01-26 23:02:29.898 | INFO     | - | Application shutdown complete.
+2026-01-26 23:02:29.900 | INFO     | - | Finished server process [19136]

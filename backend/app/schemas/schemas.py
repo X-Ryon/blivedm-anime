@@ -36,6 +36,17 @@ class GiftResponse(BaseModel):
     price: float = Field(default=0.0, description="礼物价值(元)")
     msg_type: str = Field(default="gift", description="消息类型: gift, guard")
 
+class UserResponse(BaseModel):
+    """
+    用户响应模型
+    """
+    id: int
+    user_name: str
+    sessdata: str
+
+    class Config:
+        from_attributes = True
+
 # ----------------- 数据库交互模型 (DTO) -----------------
 
 class DanmakuCreate(BaseModel):

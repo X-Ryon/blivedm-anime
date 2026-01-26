@@ -6,8 +6,9 @@ from typing import Dict, List, Set, Optional, Union
 from fastapi import WebSocket
 from backend.app.schemas import schemas
 from backend.app.crud import crud
-from backend.app.database.db import AsyncSessionLocal
+from backend.database.db import AsyncSessionLocal
 import aiohttp
+from backend.core.conf import settings
 
 # 身份映射
 PRIVILEGE_MAP = {
@@ -189,7 +190,7 @@ class BLiveService:
         session: Optional[aiohttp.ClientSession] = None
         if sessdata:
             cookies = {'SESSDATA': sessdata}
-            session = aiohttp.ClientSession(cookies=cookies, headers={'User-Agent': 'Mozilla/5.0'})
+            session = aiohttp.ClientSession(cookies=cookies, headers={'User-Agent': settings.USER_AGENT})
             self.sessions[room_id] = session
             
         client = blivedm.BLiveClient(room_id, session=session)
@@ -202,11 +203,11 @@ class BLiveService:
         asyncio.create_task(self._fetch_and_save_room_info(room_id, session))
 
     async def _fetch_and_save_room_info(self, room_id: int, session: Optional[aiohttp.ClientSession] = None):
-        url = f"https://api.live.bilibili.com/room/v1/Room/get_info?room_id={room_id}"
+        url = f"{settings.BILIBILI_API_ROOM_INFO}?room_id={room_id}"
         
         own_session = False
         if session is None:
-            session = aiohttp.ClientSession(headers={'User-Agent': 'Mozilla/5.0'})
+            session = aiohttp.ClientSession(headers={'User-Agent': settings.USER_AGENT})
             own_session = True
             
         try:
@@ -235,7 +236,7 @@ class BLiveService:
 
     async def _fetch_user_name_by_uid(self, uid: int, session: aiohttp.ClientSession) -> str:
         # 使用直播用户接口，比主站用户接口风控更低
-        url = f"https://api.live.bilibili.com/live_user/v1/Master/info?uid={uid}"
+        url = f"{settings.BILIBILI_API_LIVE_USER_INFO}?uid={uid}"
         try:
             async with session.get(url) as resp:
                 data = await resp.json()
@@ -246,9 +247,9 @@ class BLiveService:
         return ""
 
     async def _fetch_and_save_user_info(self, sessdata: str):
-        url = "https://api.bilibili.com/x/web-interface/nav"
+        url = settings.BILIBILI_API_USER_INFO
         cookies = {'SESSDATA': sessdata}
-        async with aiohttp.ClientSession(cookies=cookies, headers={'User-Agent': blivedm.utils.USER_AGENT}) as session:
+        async with aiohttp.ClientSession(cookies=cookies, headers={'User-Agent': settings.USER_AGENT}) as session:
             try:
                 async with session.get(url) as resp:
                     data = await resp.json()
