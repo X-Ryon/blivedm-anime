@@ -83,54 +83,57 @@ class BilibiliHandler(blivedm.BaseHandler):
     async def _save_danmaku(self, message, privilege_name, identity):
         async with AsyncSessionLocal() as db:
             data = schemas.DanmakuCreate(
-                room_id=self.room_id,
+                room_id=str(self.room_id),
                 user_name=message.uname,
-                uid=message.uid,
+                uid=str(message.uid),
                 level=message.medal_level if message.medal_level else 0,
                 privilege_name=privilege_name,
-                dm_text=message.msg,
-                identity=identity
+                identity=identity,
+                dm_text=message.msg
             )
             await crud.create_danmaku(db, data)
 
     async def _save_super_chat(self, message):
         async with AsyncSessionLocal() as db:
             data = schemas.SuperChatCreate(
-                room_id=self.room_id,
+                room_id=str(self.room_id),
                 user_name=message.uname,
-                uid=message.uid,
-                price=message.price,
-                message=message.message
+                uid=str(message.uid),
+                level=message.medal_level if message.medal_level else 0,
+                privilege_name="普通", # SC doesn't always carry guard info easily, defaulting
+                identity="普通", # Defaulting
+                sc_text=message.message,
+                price=message.price
             )
             await crud.create_super_chat(db, data)
 
     async def _save_gift(self, message):
         async with AsyncSessionLocal() as db:
             data = schemas.GiftCreate(
-                room_id=self.room_id,
+                room_id=str(self.room_id),
                 user_name=message.uname,
-                uid=message.uid,
+                uid=str(message.uid),
                 level=message.medal_level if message.medal_level else 0,
-                privilege_name="普通",
+                privilege_name="普通", # Gift message might not have guard info
+                identity="普通",
                 gift_name=message.gift_name,
                 gift_num=message.num,
-                price=float(message.total_coin),
-                currency=message.coin_type
+                price=float(message.total_coin)
             )
             await crud.create_gift(db, data)
 
     async def _save_guard(self, message, privilege_name):
         async with AsyncSessionLocal() as db:
             data = schemas.GiftCreate(
-                room_id=self.room_id,
+                room_id=str(self.room_id),
                 user_name=message.username,
-                uid=message.uid,
-                level=0,
+                uid=str(message.uid),
+                level=0, # Guard buy message might not have medal level
                 privilege_name=privilege_name,
+                identity="普通",
                 gift_name=privilege_name,
                 gift_num=message.num,
-                price=float(message.price),
-                currency="gold"
+                price=float(message.price)
             )
             await crud.create_gift(db, data)
 
@@ -168,6 +171,68 @@ class BLiveService:
         client.set_handler(handler)
         self.clients[room_id] = client
         client.start()
+        
+        # 异步获取并保存房间信息和用户信息
+        asyncio.create_task(self._fetch_and_save_room_info(room_id))
+        if sessdata:
+            asyncio.create_task(self._fetch_and_save_user_info(sessdata))
+
+    async def _fetch_and_save_room_info(self, room_id: int):
+        url = f"https://api.live.bilibili.com/room/v1/Room/get_info?room_id={room_id}"
+        async with aiohttp.ClientSession(headers={'User-Agent': blivedm.utils.USER_AGENT}) as session:
+            try:
+                async with session.get(url) as resp:
+                    data = await resp.json()
+                    if data['code'] == 0:
+                        room_info = data['data']
+                        title = room_info['title']
+                        # get_info 接口返回的 uid 是主播 uid，我们需要再获取主播名字? 
+                        # get_info 并没有直接返回主播名字，通常需要用 uid 再查一次，或者用 get_room_play_info
+                        # 尝试另一个接口: https://api.live.bilibili.com/xlive/web-room/v1/index/getInfoByRoom?room_id={room_id}
+                        # 为了简单起见，这里先只保存 title，host 暂时置空或再次请求
+                        host_uid = room_info['uid']
+                        host_name = await self._fetch_user_name_by_uid(host_uid, session)
+                        
+                        async with AsyncSessionLocal() as db:
+                            room_data = schemas.RoomCreate(
+                                room_id=str(room_id),
+                                title=title,
+                                host=host_name or "Unknown"
+                            )
+                            await crud.create_or_update_room(db, room_data)
+                            print(f"Room info saved: {title}, Host: {host_name}")
+            except Exception as e:
+                print(f"Failed to fetch room info: {e}")
+
+    async def _fetch_user_name_by_uid(self, uid: int, session: aiohttp.ClientSession) -> str:
+        url = f"https://api.bilibili.com/x/space/acc/info?mid={uid}"
+        try:
+            async with session.get(url) as resp:
+                data = await resp.json()
+                if data['code'] == 0:
+                    return data['data']['name']
+        except Exception:
+            pass
+        return ""
+
+    async def _fetch_and_save_user_info(self, sessdata: str):
+        url = "https://api.bilibili.com/x/web-interface/nav"
+        cookies = {'SESSDATA': sessdata}
+        async with aiohttp.ClientSession(cookies=cookies, headers={'User-Agent': blivedm.utils.USER_AGENT}) as session:
+            try:
+                async with session.get(url) as resp:
+                    data = await resp.json()
+                    if data['code'] == 0:
+                        uname = data['data']['uname']
+                        async with AsyncSessionLocal() as db:
+                            user_data = schemas.UserCreate(
+                                user_name=uname,
+                                sessdata=sessdata
+                            )
+                            await crud.create_user(db, user_data)
+                            print(f"User info saved: {uname}")
+            except Exception as e:
+                print(f"Failed to fetch user info: {e}")
 
     async def stop_listen(self, room_id: int):
         """

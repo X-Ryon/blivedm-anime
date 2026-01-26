@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker, declarative_base
 
 # 数据库文件路径
-SQLALCHEMY_DATABASE_URL = "sqlite+aiosqlite:///./sql_app.db"
+SQLALCHEMY_DATABASE_URL = "sqlite+aiosqlite:///./dmjdb.db"
 
 # 创建异步引擎
 engine = create_async_engine(

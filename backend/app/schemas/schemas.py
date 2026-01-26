@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional
 
 # ----------------- 请求模型 -----------------
@@ -8,8 +8,8 @@ class ListenRequest(BaseModel):
     """
     监听请求体
     """
-    room_id: str  # 保持为字符串以兼容前端输入，后端可转 int
-    sessdata: Optional[str] = None # 用于认证，可选
+    room_id: str = Field(..., max_length=64, description="房间号")
+    sessdata: Optional[str] = Field(default=None, max_length=512, description="B站 SESSDATA，用于身份认证")
 
 # ----------------- 响应模型 (推送到客户端的数据格式) -----------------
 
@@ -17,48 +17,60 @@ class DanmakuResponse(BaseModel):
     """
     弹幕/SC 推送数据格式
     """
-    user_name: str
-    level: int
-    privilege_name: str  # 枚举: '普通', '舰长', '提督', '总督'
-    dm_text: str
-    identity: str   # 枚举: '主播', '房管', '普通'
-    price: float   # SC 金额，非 SC 则为 0
+    user_name: str = Field(..., max_length=64, description="用户名称")
+    level: int = Field(default=0, description="粉丝牌等级")
+    privilege_name: str = Field(..., max_length=64, description="身份名称：普通、舰长、提督、总督")
+    dm_text: str = Field(..., max_length=255, description="弹幕内容")
+    identity: str = Field(..., max_length=64, description="直播间身份：主播、房管、普通")
+    price: float = Field(default=0.0, description="SC金额，普通弹幕为0")
 
 class GiftResponse(BaseModel):
     """
     礼物/上舰 推送数据格式
     """
-    user_name: str
-    level: int
-    privilege_name: str  # 枚举: '普通', '舰长', '提督', '总督'
-    gift_type: str # 具体礼物名称或 '舰长', '提督', '总督'
-    price: float   # 礼物价值
+    user_name: str = Field(..., max_length=64, description="用户名称")
+    level: int = Field(default=0, description="粉丝牌等级")
+    privilege_name: str = Field(..., max_length=64, description="身份名称：普通、舰长、提督、总督")
+    gift_type: str = Field(..., max_length=255, description="礼物名称或上舰类型")
+    price: float = Field(default=0.0, description="礼物价值(元)")
 
 # ----------------- 数据库交互模型 (DTO) -----------------
 
 class DanmakuCreate(BaseModel):
-    room_id: int
-    user_name: str
-    uid: Optional[int]
-    level: int
-    privilege_name: str
-    dm_text: str
-    identity: str
+    room_id: str = Field(..., max_length=64, description="房间号")
+    user_name: str = Field(..., max_length=64, description="用户名称")
+    uid: Optional[str] = Field(default=None, max_length=64, description="用户UID")
+    level: int = Field(default=0, description="粉丝牌等级")
+    privilege_name: str = Field(default="普通", max_length=64, description="身份名称")
+    identity: str = Field(default="普通", max_length=64, description="直播间身份")
+    dm_text: str = Field(..., max_length=255, description="弹幕内容")
 
 class SuperChatCreate(BaseModel):
-    room_id: int
-    user_name: str
-    uid: Optional[int]
-    price: float
-    message: str
+    room_id: str = Field(..., max_length=64, description="房间号")
+    user_name: str = Field(..., max_length=64, description="用户名称")
+    uid: Optional[str] = Field(default=None, max_length=64, description="用户UID")
+    level: int = Field(default=0, description="粉丝牌等级")
+    privilege_name: str = Field(default="普通", max_length=64, description="身份名称")
+    identity: str = Field(default="普通", max_length=64, description="直播间身份")
+    sc_text: str = Field(..., max_length=255, description="SC内容")
+    price: float = Field(default=0.0, description="SC金额")
+
+class RoomCreate(BaseModel):
+    room_id: str = Field(..., max_length=64, description="房间号")
+    title: Optional[str] = Field(default=None, max_length=255, description="直播间标题")
+    host: Optional[str] = Field(default=None, max_length=64, description="主播名称")
 
 class GiftCreate(BaseModel):
-    room_id: int
-    user_name: str
-    uid: Optional[int]
-    level: int
-    privilege_name: str
-    gift_name: str
-    gift_num: int
-    price: float
-    currency: str
+    room_id: str = Field(..., max_length=64, description="房间号")
+    user_name: str = Field(..., max_length=64, description="用户名称")
+    uid: Optional[str] = Field(default=None, max_length=64, description="用户UID")
+    level: int = Field(default=0, description="粉丝牌等级")
+    privilege_name: str = Field(default="普通", max_length=64, description="身份名称")
+    identity: str = Field(default="普通", max_length=64, description="直播间身份")
+    gift_name: str = Field(..., max_length=255, description="礼物名称")
+    gift_num: int = Field(default=1, description="礼物数量")
+    price: float = Field(default=0.0, description="礼物总价值")
+
+class UserCreate(BaseModel):
+    user_name: str = Field(..., max_length=64, description="用户名称")
+    sessdata: str = Field(..., max_length=512, description="B站 SESSDATA")
