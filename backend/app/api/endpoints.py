@@ -6,91 +6,59 @@ from backend.app.schemas import schemas
 
 router = APIRouter()
 
-# ----------------- WebSocket 接口 (推荐) -----------------
+from backend.app.database.db import AsyncSessionLocal
+from backend.app.crud import crud
 
-@router.websocket("/ws/danmaku/{room_id}")
-async def websocket_danmaku_endpoint(
+# ----------------- 用户管理接口 -----------------
+
+@router.post("/users")
+async def create_user(user: schemas.UserCreate):
+    """
+    注册/更新用户信息 (用户名和 SESSDATA)
+    """
+    async with AsyncSessionLocal() as db:
+        db_user = await crud.create_user(db, user)
+        return {"message": f"User {db_user.user_name} saved successfully", "user_name": db_user.user_name}
+
+# ----------------- WebSocket 接口 -----------------
+
+@router.websocket("/ws/listen/{room_id}")
+async def websocket_listen_endpoint(
     websocket: WebSocket, 
     room_id: int, 
-    sessdata: Optional[str] = Query(None, description="B站 SESSDATA Cookie，用于认证身份")
+    user_name: Optional[str] = Query(None, description="用户名称，用于查找数据库中的 Cookie")
 ):
     """
-    WebSocket 端点：实时接收弹幕和 SC
+    WebSocket 端点：实时接收所有类型消息（弹幕、礼物、SC、上舰）
     """
-    await blive_service.connect_danmaku(websocket, room_id, sessdata)
+    await blive_service.connect(websocket, room_id, user_name)
     try:
         while True:
             # 保持连接，接收客户端消息（如果有的话，比如心跳）
             await websocket.receive_text()
     except WebSocketDisconnect:
-        blive_service.disconnect_danmaku(websocket, room_id)
+        blive_service.disconnect(websocket, room_id)
 
-@router.websocket("/ws/gift/{room_id}")
-async def websocket_gift_endpoint(
-    websocket: WebSocket, 
-    room_id: int,
-    sessdata: Optional[str] = Query(None, description="B站 SESSDATA Cookie，用于认证身份")
-):
-    """
-    WebSocket 端点：实时接收礼物和上舰
-    """
-    await blive_service.connect_gift(websocket, room_id, sessdata)
-    try:
-        while True:
-            await websocket.receive_text()
-    except WebSocketDisconnect:
-        blive_service.disconnect_gift(websocket, room_id)
+# ----------------- RESTful 控制接口 -----------------
 
-# ----------------- RESTful 触发接口 (兼容用户需求) -----------------
-# 注意：标准的 HTTP POST 请求无法直接建立长连接推送流（除了 SSE），
-# 但用户描述中希望 "POST... 响应机制: 启动后台任务或 WebSocket 连接"。
-# 这里我们提供 POST 接口来显式触发监听（虽然 WebSocket 连接时会自动触发），
-# 并返回一个说明，告诉客户端应该去连接哪个 WebSocket 地址。
-
-@router.post("/listen/danmaku")
-async def listen_danmaku(request: schemas.ListenRequest, background_tasks: BackgroundTasks):
+@router.post("/listen/start")
+async def start_listen(request: schemas.ListenRequest, background_tasks: BackgroundTasks):
     """
-    接口 A: 启动弹幕监听任务
-    实际数据推送建议使用 WebSocket: /api/ws/danmaku/{room_id}
+    接口: 启动监听任务 (通常由 WebSocket 自动触发，也可手动调用)
     """
     room_id_int = int(request.room_id)
-    # 后台启动监听
-    background_tasks.add_task(blive_service.start_listen, room_id_int, request.sessdata)
+    background_tasks.add_task(blive_service.start_listen, room_id_int, request.user_name)
     
     return {
         "message": f"Listening started for room {request.room_id}",
-        "stream_url": f"/api/ws/danmaku/{request.room_id}",
+        "stream_url": f"/api/ws/listen/{request.room_id}",
         "protocol": "websocket"
     }
 
-@router.post("/listen/danmaku/stop")
-async def stop_listen_danmaku(request: schemas.ListenRequest):
+@router.post("/listen/stop")
+async def stop_listen(request: schemas.ListenRequest):
     """
-    接口: 停止弹幕监听任务
-    """
-    room_id_int = int(request.room_id)
-    await blive_service.stop_listen(room_id_int)
-    return {"message": f"Listening stopped for room {request.room_id}"}
-
-@router.post("/listen/gift")
-async def listen_gift(request: schemas.ListenRequest, background_tasks: BackgroundTasks):
-    """
-    接口 B: 启动礼物监听任务
-    实际数据推送建议使用 WebSocket: /api/ws/gift/{room_id}
-    """
-    room_id_int = int(request.room_id)
-    background_tasks.add_task(blive_service.start_listen, room_id_int, request.sessdata)
-    
-    return {
-        "message": f"Listening started for room {request.room_id}",
-        "stream_url": f"/api/ws/gift/{request.room_id}",
-        "protocol": "websocket"
-    }
-
-@router.post("/listen/gift/stop")
-async def stop_listen_gift(request: schemas.ListenRequest):
-    """
-    接口: 停止礼物监听任务
+    接口: 停止监听任务
     """
     room_id_int = int(request.room_id)
     await blive_service.stop_listen(room_id_int)

@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 import asyncio
 import blivedm
-import blivedm.models.web as web_models
-from typing import Dict, List, Set, Optional
+from blivedm.models import web as web_models
+from typing import Dict, List, Set, Optional, Union
 from fastapi import WebSocket
 from backend.app.schemas import schemas
 from backend.app.crud import crud
@@ -32,11 +32,12 @@ class BilibiliHandler(blivedm.BaseHandler):
             privilege_name=privilege_name,
             dm_text=message.msg,
             identity=identity,
-            price=0
+            price=0,
+            msg_type="danmaku"
         )
         
         print(f"房间:{self.room_id}，用户名:{message.uname}，弹幕: {message.msg}，舰队:{privilege_name}，身份:{identity}")
-        asyncio.create_task(self.service.broadcast_danmaku(self.room_id, resp))
+        asyncio.create_task(self.service.broadcast(self.room_id, resp))
         asyncio.create_task(self._save_danmaku(message, privilege_name, identity))
 
     def _on_super_chat(self, client: blivedm.BLiveClient, message: web_models.SuperChatMessage):
@@ -46,9 +47,10 @@ class BilibiliHandler(blivedm.BaseHandler):
             privilege_name="普通",
             dm_text=message.message,
             identity="普通",
-            price=message.price
+            price=message.price,
+            msg_type="super_chat"
         )
-        asyncio.create_task(self.service.broadcast_danmaku(self.room_id, resp))
+        asyncio.create_task(self.service.broadcast(self.room_id, resp))
         asyncio.create_task(self._save_super_chat(message))
 
     def _on_gift(self, client: blivedm.BLiveClient, message: web_models.GiftMessage):
@@ -63,9 +65,10 @@ class BilibiliHandler(blivedm.BaseHandler):
             level=message.medal_level if message.medal_level else 0,
             privilege_name="普通",
             gift_type=message.gift_name,
-            price=price
+            price=price/1000.0,
+            msg_type="gift"
         )
-        asyncio.create_task(self.service.broadcast_gift(self.room_id, resp))
+        asyncio.create_task(self.service.broadcast(self.room_id, resp))
         asyncio.create_task(self._save_gift(message))
 
     def _on_buy_guard(self, client: blivedm.BLiveClient, message: web_models.GuardBuyMessage):
@@ -75,9 +78,23 @@ class BilibiliHandler(blivedm.BaseHandler):
             level=0,
             privilege_name=guard_name,
             gift_type=guard_name,
-            price=float(message.price)
+            price=float(message.price) / 1000.0, # price is usually in 1000s
+            msg_type="guard"
         )
-        asyncio.create_task(self.service.broadcast_gift(self.room_id, resp))
+        asyncio.create_task(self.service.broadcast(self.room_id, resp))
+        asyncio.create_task(self._save_guard(message, guard_name))
+
+    def _on_user_toast_v2(self, client: blivedm.BLiveClient, message: web_models.UserToastV2Message):
+        guard_name = PRIVILEGE_MAP.get(message.guard_level, "未知舰队")
+        resp = schemas.GiftResponse(
+            user_name=message.username,
+            level=message.medal_level if message.medal_level else 0,
+            privilege_name=guard_name,
+            gift_type=guard_name,
+            price=float(message.price) / 1000.0,
+            msg_type="guard"
+        )
+        asyncio.create_task(self.service.broadcast(self.room_id, resp))
         asyncio.create_task(self._save_guard(message, guard_name))
 
     async def _save_danmaku(self, message, privilege_name, identity):
@@ -118,22 +135,26 @@ class BilibiliHandler(blivedm.BaseHandler):
                 identity="普通",
                 gift_name=message.gift_name,
                 gift_num=message.num,
-                price=float(message.total_coin)
+                price=float(message.total_coin) / 1000.0
             )
             await crud.create_gift(db, data)
 
     async def _save_guard(self, message, privilege_name):
         async with AsyncSessionLocal() as db:
+            level = 0
+            if hasattr(message, 'medal_level') and message.medal_level:
+                level = message.medal_level
+
             data = schemas.GiftCreate(
                 room_id=str(self.room_id),
                 user_name=message.username,
                 uid=str(message.uid),
-                level=0, # Guard buy message might not have medal level
+                level=level, 
                 privilege_name=privilege_name,
                 identity="普通",
                 gift_name=privilege_name,
                 gift_num=message.num,
-                price=float(message.price)
+                price=float(message.price) / 1000.0
             )
             await crud.create_gift(db, data)
 
@@ -144,75 +165,84 @@ class BLiveService:
         # room_id -> aiohttp.ClientSession (managed by us if sessdata is used)
         self.sessions: Dict[int, aiohttp.ClientSession] = {}
         
-        # room_id -> List[WebSocket] for danmaku
-        self.danmaku_connections: Dict[int, Set[WebSocket]] = {}
-        # room_id -> List[WebSocket] for gift
-        self.gift_connections: Dict[int, Set[WebSocket]] = {}
+        # room_id -> List[WebSocket] (Unified connection list)
+        self.connections: Dict[int, Set[WebSocket]] = {}
 
-    async def start_listen(self, room_id: int, sessdata: Optional[str] = None):
-        """
-        启动监听
-        :param room_id: 房间号
-        :param sessdata: B站 SESSDATA Cookie，用于认证身份（如显示完整用户名、发送弹幕等）
-        """
-        # 如果已经运行，检查是否需要更新配置（这里简单处理：如果已运行且参数变更可能需要重启，目前仅忽略）
-        if room_id in self.clients and self.clients[room_id].is_running:
+    async def start_listen(self, room_id: int, user_name: Optional[str] = None):
+        if room_id in self.clients:
+            print(f"Already listening to room {room_id}")
             return
 
-        session = None
-        if sessdata:
-            # 如果提供了 SESSDATA，创建一个带 Cookie 的会话
-            cookies = {'SESSDATA': sessdata}
-            session = aiohttp.ClientSession(cookies=cookies, headers={'User-Agent': blivedm.utils.USER_AGENT})
-            self.sessions[room_id] = session
+        print(f"Starting listen for room {room_id}")
+        
+        sessdata = None
+        if user_name:
+            async with AsyncSessionLocal() as db:
+                user = await crud.get_user_by_name(db, user_name)
+                if user:
+                    sessdata = user.sessdata
+                    print(f"Found SESSDATA for user {user_name}")
+                else:
+                    print(f"User {user_name} not found in DB")
 
+        # 如果提供了 SESSDATA，则创建 session
+        session: Optional[aiohttp.ClientSession] = None
+        if sessdata:
+            cookies = {'SESSDATA': sessdata}
+            session = aiohttp.ClientSession(cookies=cookies, headers={'User-Agent': 'Mozilla/5.0'})
+            self.sessions[room_id] = session
+            
         client = blivedm.BLiveClient(room_id, session=session)
         handler = BilibiliHandler(room_id, self)
         client.set_handler(handler)
         self.clients[room_id] = client
         client.start()
         
-        # 异步获取并保存房间信息和用户信息
-        asyncio.create_task(self._fetch_and_save_room_info(room_id))
-        if sessdata:
-            asyncio.create_task(self._fetch_and_save_user_info(sessdata))
+        # 异步获取并保存房间信息
+        asyncio.create_task(self._fetch_and_save_room_info(room_id, session))
 
-    async def _fetch_and_save_room_info(self, room_id: int):
+    async def _fetch_and_save_room_info(self, room_id: int, session: Optional[aiohttp.ClientSession] = None):
         url = f"https://api.live.bilibili.com/room/v1/Room/get_info?room_id={room_id}"
-        async with aiohttp.ClientSession(headers={'User-Agent': blivedm.utils.USER_AGENT}) as session:
-            try:
-                async with session.get(url) as resp:
-                    data = await resp.json()
-                    if data['code'] == 0:
-                        room_info = data['data']
-                        title = room_info['title']
-                        # get_info 接口返回的 uid 是主播 uid，我们需要再获取主播名字? 
-                        # get_info 并没有直接返回主播名字，通常需要用 uid 再查一次，或者用 get_room_play_info
-                        # 尝试另一个接口: https://api.live.bilibili.com/xlive/web-room/v1/index/getInfoByRoom?room_id={room_id}
-                        # 为了简单起见，这里先只保存 title，host 暂时置空或再次请求
-                        host_uid = room_info['uid']
-                        host_name = await self._fetch_user_name_by_uid(host_uid, session)
-                        
-                        async with AsyncSessionLocal() as db:
-                            room_data = schemas.RoomCreate(
-                                room_id=str(room_id),
-                                title=title,
-                                host=host_name or "Unknown"
-                            )
-                            await crud.create_or_update_room(db, room_data)
-                            print(f"Room info saved: {title}, Host: {host_name}")
-            except Exception as e:
-                print(f"Failed to fetch room info: {e}")
-
-    async def _fetch_user_name_by_uid(self, uid: int, session: aiohttp.ClientSession) -> str:
-        url = f"https://api.bilibili.com/x/space/acc/info?mid={uid}"
+        
+        own_session = False
+        if session is None:
+            session = aiohttp.ClientSession(headers={'User-Agent': 'Mozilla/5.0'})
+            own_session = True
+            
         try:
             async with session.get(url) as resp:
                 data = await resp.json()
                 if data['code'] == 0:
-                    return data['data']['name']
-        except Exception:
-            pass
+                    room_info = data['data']
+                    title = room_info['title']
+                    # get_info 接口返回的 uid 是主播 uid
+                    host_uid = room_info['uid']
+                    host_name = await self._fetch_user_name_by_uid(host_uid, session)
+                    
+                    async with AsyncSessionLocal() as db:
+                        room_data = schemas.RoomCreate(
+                            room_id=str(room_id),
+                            title=title,
+                            host=host_name or "Unknown"
+                        )
+                        await crud.create_or_update_room(db, room_data)
+                        print(f"Room info saved: {title}, Host: {host_name}")
+        except Exception as e:
+            print(f"Failed to fetch room info: {e}")
+        finally:
+            if own_session:
+                await session.close()
+
+    async def _fetch_user_name_by_uid(self, uid: int, session: aiohttp.ClientSession) -> str:
+        # 使用直播用户接口，比主站用户接口风控更低
+        url = f"https://api.live.bilibili.com/live_user/v1/Master/info?uid={uid}"
+        try:
+            async with session.get(url) as resp:
+                data = await resp.json()
+                if data['code'] == 0:
+                    return data['data']['info']['uname']
+        except Exception as e:
+            print(f"Failed to fetch host name: {e}")
         return ""
 
     async def _fetch_and_save_user_info(self, sessdata: str):
@@ -247,46 +277,37 @@ class BLiveService:
             await self.sessions[room_id].close()
             del self.sessions[room_id]
 
-    async def connect_danmaku(self, websocket: WebSocket, room_id: int, sessdata: Optional[str] = None):
+    async def connect(self, websocket: WebSocket, room_id: int, user_name: Optional[str] = None):
+        """
+        建立 WebSocket 连接并启动监听
+        """
         await websocket.accept()
-        if room_id not in self.danmaku_connections:
-            self.danmaku_connections[room_id] = set()
-        self.danmaku_connections[room_id].add(websocket)
+        if room_id not in self.connections:
+            self.connections[room_id] = set()
+        self.connections[room_id].add(websocket)
         # 自动开始监听
-        await self.start_listen(room_id, sessdata)
+        await self.start_listen(room_id, user_name)
 
-    def disconnect_danmaku(self, websocket: WebSocket, room_id: int):
-        if room_id in self.danmaku_connections:
-            self.danmaku_connections[room_id].remove(websocket)
+    def disconnect(self, websocket: WebSocket, room_id: int):
+        """
+        断开 WebSocket 连接
+        """
+        if room_id in self.connections:
+            if websocket in self.connections[room_id]:
+                self.connections[room_id].remove(websocket)
 
-    async def connect_gift(self, websocket: WebSocket, room_id: int, sessdata: Optional[str] = None):
-        await websocket.accept()
-        if room_id not in self.gift_connections:
-            self.gift_connections[room_id] = set()
-        self.gift_connections[room_id].add(websocket)
-        await self.start_listen(room_id, sessdata)
-
-    def disconnect_gift(self, websocket: WebSocket, room_id: int):
-        if room_id in self.gift_connections:
-            self.gift_connections[room_id].remove(websocket)
-
-    async def broadcast_danmaku(self, room_id: int, data: schemas.DanmakuResponse):
-        print(f"Broadcasting danmaku to {room_id}, active connections: {len(self.danmaku_connections.get(room_id, []))}")
-        if room_id in self.danmaku_connections:
-            for connection in list(self.danmaku_connections[room_id]):
+    async def broadcast(self, room_id: int, data: Union[schemas.DanmakuResponse, schemas.GiftResponse]):
+        """
+        广播消息到所有连接
+        """
+        # print(f"Broadcasting to {room_id}, active connections: {len(self.connections.get(room_id, []))}")
+        if room_id in self.connections:
+            for connection in list(self.connections[room_id]):
                 try:
                     await connection.send_json(data.model_dump())
                 except Exception as e:
                     print(f"Broadcast error: {e}")
-                    self.disconnect_danmaku(connection, room_id)
-
-    async def broadcast_gift(self, room_id: int, data: schemas.GiftResponse):
-        if room_id in self.gift_connections:
-            for connection in list(self.gift_connections[room_id]):
-                try:
-                    await connection.send_json(data.model_dump())
-                except Exception:
-                    self.disconnect_gift(connection, room_id)
+                    self.disconnect(connection, room_id)
 
 # 全局单例
 blive_service = BLiveService()

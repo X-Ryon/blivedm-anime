@@ -9,7 +9,7 @@ class ListenRequest(BaseModel):
     监听请求体
     """
     room_id: str = Field(..., max_length=64, description="房间号")
-    sessdata: Optional[str] = Field(default=None, max_length=512, description="B站 SESSDATA，用于身份认证")
+    user_name: Optional[str] = Field(default=None, max_length=64, description="用户名称，用于查找数据库中的 Cookie")
 
 # ----------------- 响应模型 (推送到客户端的数据格式) -----------------
 
@@ -23,6 +23,7 @@ class DanmakuResponse(BaseModel):
     dm_text: str = Field(..., max_length=255, description="弹幕内容")
     identity: str = Field(..., max_length=64, description="直播间身份：主播、房管、普通")
     price: float = Field(default=0.0, description="SC金额，普通弹幕为0")
+    msg_type: str = Field(default="danmaku", description="消息类型: danmaku, super_chat")
 
 class GiftResponse(BaseModel):
     """
@@ -33,6 +34,7 @@ class GiftResponse(BaseModel):
     privilege_name: str = Field(..., max_length=64, description="身份名称：普通、舰长、提督、总督")
     gift_type: str = Field(..., max_length=255, description="礼物名称或上舰类型")
     price: float = Field(default=0.0, description="礼物价值(元)")
+    msg_type: str = Field(default="gift", description="消息类型: gift, guard")
 
 # ----------------- 数据库交互模型 (DTO) -----------------
 
