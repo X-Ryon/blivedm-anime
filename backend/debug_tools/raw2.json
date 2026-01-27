@@ -1,0 +1,106 @@
+{
+  "cmd": "DANMU_MSG",
+  "dm_v2": "",
+  "info": [
+    [
+      0,
+      1,
+      25,
+      16777215,
+      1769484080977,
+      768928844,
+      0,
+      "acb93b26",
+      0,
+      0,
+      0,
+      "",
+      0,
+      "{}",
+      "{}",
+      {
+        "extra": "{\"send_from_me\":false,\"master_player_hidden\":false,\"mode\":0,\"color\":16777215,\"dm_type\":0,\"font_size\":25,\"player_mode\":1,\"show_player_type\":0,\"content\":\"测试3\",\"user_hash\":\"2897820454\",\"emoticon_unique\":\"\",\"bulge_display\":0,\"recommend_score\":1,\"main_state_dm_color\":\"\",\"objective_state_dm_color\":\"\",\"direction\":0,\"pk_direction\":0,\"quartet_direction\":0,\"anniversary_crowd\":0,\"yeah_space_type\":\"\",\"yeah_space_url\":\"\",\"jump_to_url\":\"\",\"space_type\":\"\",\"space_url\":\"\",\"animation\":{},\"emots\":null,\"is_audited\":false,\"id_str\":\"6ff49e9b239be48e0a8df4528469782f1632\",\"icon\":null,\"show_reply\":true,\"reply_mid\":1811689107,\"reply_uname\":\"我尼奈不是蟑螂\",\"reply_uname_color\":\"#FB7299\",\"reply_is_mystery\":false,\"reply_type_enum\":1,\"hit_combo\":0,\"esports_jump_url\":\"\",\"is_mirror\":false,\"is_collaboration_member\":false,\"card\":{\"card_type\":0,\"oid_str\":\"\",\"oid_str_1\":\"\",\"origin_oid_str\":\"\",\"share_id\":\"\",\"share_origin\":\"\",\"from\":\"\",\"card_content\":null},\"voice\":null,\"background_type\":0}",
+        "mode": 0,
+        "show_player_type": 0,
+        "user": {
+          "base": {
+            "face": "https://i0.hdslb.com/bfs/face/fecf41c10ae143a547c5c0287c2d59ed34583aca.webp",
+            "is_mystery": false,
+            "name": "XRyon",
+            "name_color": 0,
+            "name_color_str": "",
+            "official_info": {
+              "desc": "",
+              "role": 0,
+              "title": "",
+              "type": -1
+            },
+            "origin_info": {
+              "face": "https://i0.hdslb.com/bfs/face/fecf41c10ae143a547c5c0287c2d59ed34583aca.webp",
+              "name": "XRyon"
+            },
+            "risk_ctrl_info": null
+          },
+          "guard": null,
+          "guard_leader": {
+            "is_guard_leader": false
+          },
+          "medal": null,
+          "title": {
+            "old_title_css_id": "",
+            "title_css_id": ""
+          },
+          "uhead_frame": null,
+          "uid": 3772038,
+          "wealth": null
+        }
+      },
+      {
+        "activity_identity": "",
+        "activity_source": 0,
+        "not_show": 0
+      },
+      0
+    ],
+    "测试3",
+    [
+      3772038,
+      "XRyon",
+      0,
+      0,
+      0,
+      10000,
+      1,
+      ""
+    ],
+    [],
+    [
+      22,
+      0,
+      5805790,
+      ">50000",
+      0
+    ],
+    [
+      "",
+      ""
+    ],
+    0,
+    0,
+    null,
+    {
+      "ct": "33EF6340",
+      "ts": 1769484080
+    },
+    0,
+    0,
+    null,
+    null,
+    0,
+    960,
+    [
+      35
+    ],
+    null
+  ]
+}

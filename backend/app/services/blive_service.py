@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 import asyncio
-import blivedm
-from blivedm.models import web as web_models
+# 使用本地 blivedm
+from backend.blivedm import blivedm
+from backend.blivedm.blivedm.models import web as web_models
 from typing import Dict, List, Set, Optional, Union
 from fastapi import WebSocket
 from backend.app.schemas import schemas
@@ -17,6 +18,8 @@ PRIVILEGE_MAP = {
     2: "提督",
     3: "舰长"
 }
+
+import json
 
 class BilibiliHandler(blivedm.BaseHandler):
     def __init__(self, room_id: int, service: 'BLiveService'):
@@ -40,6 +43,11 @@ class BilibiliHandler(blivedm.BaseHandler):
         print(f"房间:{self.room_id}，用户名:{message.uname}，弹幕: {message.msg}，舰队:{privilege_name}，身份:{identity}")
         asyncio.create_task(self.service.broadcast(self.room_id, resp))
         asyncio.create_task(self._save_danmaku(message, privilege_name, identity))
+        
+    # 本地 blivedm 已经修改支持解析 reply_uname，这里不再需要手动解析
+    # def handle(self, client: blivedm.BLiveClient, command: dict):
+    #     ...
+
 
     def _on_super_chat(self, client: blivedm.BLiveClient, message: web_models.SuperChatMessage):
         resp = schemas.DanmakuResponse(
