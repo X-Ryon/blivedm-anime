@@ -1,6 +1,6 @@
-# Bilidmj Anime (Bilibili 直播弹幕机)
+# Bilidmj Anime (Bilibili 直播弹幕姬(动画版))
 
-这是一个基于 Python 的 Bilibili 直播弹幕处理后端项目，旨在实时监听和处理直播间弹幕、礼物及其他互动信息。
+这是一个基于 blivedm 的支持动画播放的 Bilibili 直播弹幕姬客户端。
 
 ## 📁 项目结构
 
