@@ -55,6 +55,10 @@ class StartListenResponse(BaseModel):
 class StopListenResponse(BaseModel):
     message: str = Field(..., description="取消监听成功消息")
 
+class DeleteUserResponse(BaseModel):
+    success: bool = Field(..., description="是否删除成功")
+    message: str = Field(..., description="操作消息")
+
 # ----------------- 数据库交互模型 (DTO) -----------------
 
 class DanmakuCreate(BaseModel):

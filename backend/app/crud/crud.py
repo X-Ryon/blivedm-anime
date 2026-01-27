@@ -47,6 +47,25 @@ class CRUDDao:
         result = await db.execute(select(models.User).filter(models.User.user_name == user_name))
         return result.scalars().first()
 
+    async def delete_user_by_name(self, db: AsyncSession, user_name: str) -> bool:
+        """
+        根据用户名删除用户
+
+        Args:
+            db (AsyncSession): 数据库会话
+            user_name (str): 用户名称
+
+        Returns:
+            bool: 是否删除成功
+        """
+        result = await db.execute(select(models.User).filter(models.User.user_name == user_name))
+        db_user = result.scalars().first()
+        if db_user:
+            await db.delete(db_user)
+            await db.commit()
+            return True
+        return False
+
     async def create_or_update_room(self, db: AsyncSession, room: schemas.RoomCreate) -> models.Room:
         # 查找是否存在
         result = await db.execute(select(models.Room).filter(models.Room.room_id == room.room_id))

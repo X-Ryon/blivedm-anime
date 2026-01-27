@@ -17,6 +17,17 @@ async def create_user(user: schemas.UserCreate):
     db_user = await user_service.create_user(user)
     return db_user
 
+@router.delete("/users", response_model=schemas.DeleteUserResponse)
+async def delete_user(user_name: str = Query(..., description="要删除的用户名")):
+    """
+    删除已保存的用户信息
+    """
+    success = await user_service.delete_user(user_name)
+    return {
+        "success": success,
+        "message": f"用户 {user_name} 删除成功" if success else f"用户 {user_name} 不存在"
+    }
+
 # ----------------- WebSocket 接口 -----------------
 
 @router.websocket("/ws/listen/{room_id}")
