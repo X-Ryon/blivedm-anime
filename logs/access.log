@@ -56,3 +56,165 @@
 2026-01-26 23:02:29.897 | INFO     | - | Waiting for application shutdown.
 2026-01-26 23:02:29.898 | INFO     | - | Application shutdown complete.
 2026-01-26 23:02:29.900 | INFO     | - | Finished server process [19136]
+2026-01-27 10:17:28.714 | INFO     | - | Started server process [37220]
+2026-01-27 10:17:28.714 | INFO     | - | Waiting for application startup.
+2026-01-27 10:17:28.720 | INFO     | - | Application startup complete.
+2026-01-27 10:17:34.190 | INFO     | fdaea327-f72e-4b22-9bfe-604827477e11 | Request started: GET http://127.0.0.1:8000/
+2026-01-27 10:17:34.191 | INFO     | - | 127.0.0.1:3626 - "GET / HTTP/1.1" 404
+2026-01-27 10:17:34.426 | INFO     | 6621ce67-e24c-440a-ac2e-6b829cc961fc | Request started: GET http://127.0.0.1:8000/favicon.ico
+2026-01-27 10:17:34.428 | INFO     | - | 127.0.0.1:3626 - "GET /favicon.ico HTTP/1.1" 404
+2026-01-27 10:17:42.208 | INFO     | ee996e32-b391-42b5-8229-994b47e54aad | Request started: GET http://127.0.0.1:8000/docs
+2026-01-27 10:17:42.210 | INFO     | - | 127.0.0.1:10006 - "GET /docs HTTP/1.1" 200
+2026-01-27 10:17:42.269 | INFO     | 9a994655-b7a4-48ff-8e3d-b7838cf8b693 | Request started: GET http://127.0.0.1:8000/openapi.json
+2026-01-27 10:17:42.282 | INFO     | - | 127.0.0.1:10006 - "GET /openapi.json HTTP/1.1" 200
+2026-01-27 10:18:17.434 | INFO     | - | Shutting down
+2026-01-27 10:18:17.537 | INFO     | - | Waiting for application shutdown.
+2026-01-27 10:18:17.537 | INFO     | - | Application shutdown complete.
+2026-01-27 10:18:17.538 | INFO     | - | Finished server process [37220]
+2026-01-27 10:18:21.036 | INFO     | - | Started server process [15604]
+2026-01-27 10:18:21.038 | INFO     | - | Waiting for application startup.
+2026-01-27 10:18:21.054 | INFO     | - | Application startup complete.
+2026-01-27 10:18:21.066 | INFO     | 08bee771-0c86-460c-a45c-4f39befb4550 | Request started: GET http://127.0.0.1:8000/docs
+2026-01-27 10:18:21.068 | INFO     | - | 127.0.0.1:6929 - "GET /docs HTTP/1.1" 200
+2026-01-27 10:18:21.175 | INFO     | 2e616126-e4f9-426d-976a-646b1b3cdaad | Request started: GET http://127.0.0.1:8000/openapi.json
+2026-01-27 10:18:21.188 | INFO     | - | 127.0.0.1:6929 - "GET /openapi.json HTTP/1.1" 200
+2026-01-27 10:30:16.270 | INFO     | - | Shutting down
+2026-01-27 10:30:16.374 | INFO     | - | Waiting for application shutdown.
+2026-01-27 10:30:16.376 | INFO     | - | Application shutdown complete.
+2026-01-27 10:30:16.377 | INFO     | - | Finished server process [15604]
+2026-01-27 10:30:17.790 | INFO     | - | Started server process [25876]
+2026-01-27 10:30:17.790 | INFO     | - | Waiting for application startup.
+2026-01-27 10:30:17.796 | INFO     | - | Application startup complete.
+2026-01-27 10:30:41.949 | INFO     | - | Shutting down
+2026-01-27 10:30:42.063 | INFO     | - | Waiting for application shutdown.
+2026-01-27 10:30:42.063 | INFO     | - | Application shutdown complete.
+2026-01-27 10:30:42.063 | INFO     | - | Finished server process [25876]
+2026-01-27 10:30:43.623 | INFO     | - | Started server process [9340]
+2026-01-27 10:30:43.623 | INFO     | - | Waiting for application startup.
+2026-01-27 10:30:43.631 | INFO     | - | Application startup complete.
+2026-01-27 10:30:59.035 | INFO     | - | Shutting down
+2026-01-27 10:30:59.141 | INFO     | - | Waiting for application shutdown.
+2026-01-27 10:30:59.143 | INFO     | - | Application shutdown complete.
+2026-01-27 10:30:59.143 | INFO     | - | Finished server process [9340]
+2026-01-27 10:31:00.484 | INFO     | - | Started server process [14308]
+2026-01-27 10:31:00.484 | INFO     | - | Waiting for application startup.
+2026-01-27 10:31:00.490 | INFO     | - | Application startup complete.
+2026-01-27 10:31:01.015 | INFO     | - | Shutting down
+2026-01-27 10:31:01.128 | INFO     | - | Waiting for application shutdown.
+2026-01-27 10:31:01.129 | INFO     | - | Application shutdown complete.
+2026-01-27 10:31:01.129 | INFO     | - | Finished server process [14308]
+2026-01-27 10:31:02.465 | INFO     | - | Started server process [26364]
+2026-01-27 10:31:02.466 | INFO     | - | Waiting for application startup.
+2026-01-27 10:31:02.476 | INFO     | - | Application startup complete.
+2026-01-27 10:31:02.918 | INFO     | - | Shutting down
+2026-01-27 10:31:03.021 | INFO     | - | Waiting for application shutdown.
+2026-01-27 10:31:03.021 | INFO     | - | Application shutdown complete.
+2026-01-27 10:31:03.021 | INFO     | - | Finished server process [26364]
+2026-01-27 10:31:04.500 | INFO     | - | Started server process [19740]
+2026-01-27 10:31:04.500 | INFO     | - | Waiting for application startup.
+2026-01-27 10:31:04.507 | INFO     | - | Application startup complete.
+2026-01-27 10:31:05.823 | INFO     | - | Started server process [23036]
+2026-01-27 10:31:05.823 | INFO     | - | Waiting for application startup.
+2026-01-27 10:31:05.829 | INFO     | - | Application startup complete.
+2026-01-27 10:31:28.938 | INFO     | - | Shutting down
+2026-01-27 10:31:29.051 | INFO     | - | Waiting for application shutdown.
+2026-01-27 10:31:29.053 | INFO     | - | Application shutdown complete.
+2026-01-27 10:31:29.053 | INFO     | - | Finished server process [23036]
+2026-01-27 10:31:30.293 | INFO     | - | Started server process [22004]
+2026-01-27 10:31:30.293 | INFO     | - | Waiting for application startup.
+2026-01-27 10:31:30.299 | INFO     | - | Application startup complete.
+2026-01-27 10:31:42.241 | INFO     | - | Shutting down
+2026-01-27 10:31:42.345 | INFO     | - | Waiting for application shutdown.
+2026-01-27 10:31:42.345 | INFO     | - | Application shutdown complete.
+2026-01-27 10:31:42.345 | INFO     | - | Finished server process [22004]
+2026-01-27 10:31:43.778 | INFO     | - | Started server process [3576]
+2026-01-27 10:31:43.778 | INFO     | - | Waiting for application startup.
+2026-01-27 10:31:43.783 | INFO     | - | Application startup complete.
+2026-01-27 10:32:00.202 | INFO     | - | Shutting down
+2026-01-27 10:32:00.305 | INFO     | - | Waiting for application shutdown.
+2026-01-27 10:32:00.306 | INFO     | - | Application shutdown complete.
+2026-01-27 10:32:00.306 | INFO     | - | Finished server process [3576]
+2026-01-27 10:32:01.752 | INFO     | - | Started server process [10544]
+2026-01-27 10:32:01.752 | INFO     | - | Waiting for application startup.
+2026-01-27 10:32:01.761 | INFO     | - | Application startup complete.
+2026-01-27 10:32:11.568 | INFO     | - | Shutting down
+2026-01-27 10:32:11.674 | INFO     | - | Waiting for application shutdown.
+2026-01-27 10:32:11.676 | INFO     | - | Application shutdown complete.
+2026-01-27 10:32:11.676 | INFO     | - | Finished server process [10544]
+2026-01-27 10:32:13.081 | INFO     | - | Started server process [16372]
+2026-01-27 10:32:13.081 | INFO     | - | Waiting for application startup.
+2026-01-27 10:32:13.089 | INFO     | - | Application startup complete.
+2026-01-27 10:32:28.596 | INFO     | - | Shutting down
+2026-01-27 10:32:28.706 | INFO     | - | Waiting for application shutdown.
+2026-01-27 10:32:28.707 | INFO     | - | Application shutdown complete.
+2026-01-27 10:32:28.707 | INFO     | - | Finished server process [16372]
+2026-01-27 10:32:30.198 | INFO     | - | Started server process [18856]
+2026-01-27 10:32:30.198 | INFO     | - | Waiting for application startup.
+2026-01-27 10:32:30.204 | INFO     | - | Application startup complete.
+2026-01-27 10:32:34.745 | INFO     | - | Shutting down
+2026-01-27 10:32:34.850 | INFO     | - | Waiting for application shutdown.
+2026-01-27 10:32:34.850 | INFO     | - | Application shutdown complete.
+2026-01-27 10:32:34.851 | INFO     | - | Finished server process [18856]
+2026-01-27 10:32:36.288 | INFO     | - | Started server process [17340]
+2026-01-27 10:32:36.288 | INFO     | - | Waiting for application startup.
+2026-01-27 10:32:36.293 | INFO     | - | Application startup complete.
+2026-01-27 10:33:58.084 | INFO     | d5b659cd-ce23-4765-ad06-96c341409dd5 | Request started: POST http://127.0.0.1:8000/api/v1/listen/start
+2026-01-27 10:33:58.094 | INFO     | - | 127.0.0.1:4318 - "POST /api/v1/listen/start HTTP/1.1" 200
+2026-01-27 10:34:22.440 | INFO     | - | Shutting down
+2026-01-27 10:34:22.556 | INFO     | - | Waiting for application shutdown.
+2026-01-27 10:34:22.557 | INFO     | - | Application shutdown complete.
+2026-01-27 10:34:22.557 | INFO     | - | Finished server process [17340]
+2026-01-27 10:34:24.159 | INFO     | - | Started server process [6408]
+2026-01-27 10:34:24.159 | INFO     | - | Waiting for application startup.
+2026-01-27 10:34:24.167 | INFO     | - | Application startup complete.
+2026-01-27 10:34:36.771 | INFO     | 829dab18-94b9-406c-88d8-a64314d20064 | Request started: POST http://127.0.0.1:8000/api/v1/listen/start
+2026-01-27 10:34:36.782 | INFO     | - | 127.0.0.1:12562 - "POST /api/v1/listen/start HTTP/1.1" 200
+2026-01-27 10:34:46.547 | INFO     | - | Shutting down
+2026-01-27 10:34:46.659 | INFO     | - | Waiting for application shutdown.
+2026-01-27 10:34:46.659 | INFO     | - | Application shutdown complete.
+2026-01-27 10:34:46.661 | INFO     | - | Finished server process [6408]
+2026-01-27 10:34:52.844 | INFO     | - | Started server process [21992]
+2026-01-27 10:34:52.844 | INFO     | - | Waiting for application startup.
+2026-01-27 10:34:52.849 | INFO     | - | Application startup complete.
+2026-01-27 10:34:54.975 | INFO     | 24009bd0-068b-48a9-84a9-541afefd8e10 | Request started: POST http://127.0.0.1:8000/api/v1/listen/start
+2026-01-27 10:34:54.990 | INFO     | - | 127.0.0.1:12268 - "POST /api/v1/listen/start HTTP/1.1" 200
+2026-01-27 10:35:40.299 | INFO     | - | Shutting down
+2026-01-27 10:35:40.402 | INFO     | - | Waiting for application shutdown.
+2026-01-27 10:35:40.402 | INFO     | - | Application shutdown complete.
+2026-01-27 10:35:40.402 | INFO     | - | Finished server process [21992]
+2026-01-27 10:35:42.380 | INFO     | - | Started server process [25652]
+2026-01-27 10:35:42.382 | INFO     | - | Waiting for application startup.
+2026-01-27 10:35:42.402 | INFO     | - | Application startup complete.
+2026-01-27 10:35:42.581 | INFO     | 9ea17afc-38de-4c43-b2d1-97001a663599 | Request started: POST http://127.0.0.1:8000/api/v1/listen/start
+2026-01-27 10:35:42.593 | INFO     | - | 127.0.0.1:5773 - "POST /api/v1/listen/start HTTP/1.1" 200
+2026-01-27 10:36:13.441 | INFO     | 9a072898-ec0d-4a84-b45a-3a2346c825e1 | Request started: POST http://127.0.0.1:8000/api/v1/listen/stop
+2026-01-27 10:36:13.446 | INFO     | - | 127.0.0.1:11889 - "POST /api/v1/listen/stop HTTP/1.1" 200
+2026-01-27 10:36:28.785 | INFO     | 0155eb8a-07d3-4f9f-a57f-5dc24e294589 | Request started: GET http://127.0.0.1:8000/docs
+2026-01-27 10:36:28.787 | INFO     | - | 127.0.0.1:11619 - "GET /docs HTTP/1.1" 200
+2026-01-27 10:36:28.849 | INFO     | 131c66b6-5f4c-49cc-9628-5f4729b6879f | Request started: GET http://127.0.0.1:8000/openapi.json
+2026-01-27 10:36:28.870 | INFO     | - | 127.0.0.1:11619 - "GET /openapi.json HTTP/1.1" 200
+2026-01-27 10:39:10.769 | INFO     | - | Shutting down
+2026-01-27 10:39:10.871 | INFO     | - | Waiting for application shutdown.
+2026-01-27 10:39:10.873 | INFO     | - | Application shutdown complete.
+2026-01-27 10:39:10.873 | INFO     | - | Finished server process [25652]
+2026-01-27 10:40:15.414 | INFO     | - | Started server process [32556]
+2026-01-27 10:40:15.414 | INFO     | - | Waiting for application startup.
+2026-01-27 10:40:15.422 | INFO     | - | Application startup complete.
+2026-01-27 10:40:27.708 | INFO     | 55dc781c-46ce-4947-90c1-711c54cbdb61 | Request started: GET http://127.0.0.1:8000/docs
+2026-01-27 10:40:27.710 | INFO     | - | 127.0.0.1:2822 - "GET /docs HTTP/1.1" 200
+2026-01-27 10:40:27.785 | INFO     | ce960d82-9dca-4a31-b216-220d30f70949 | Request started: GET http://127.0.0.1:8000/openapi.json
+2026-01-27 10:40:27.805 | INFO     | - | 127.0.0.1:2822 - "GET /openapi.json HTTP/1.1" 200
+2026-01-27 10:40:43.000 | INFO     | 34172c87-bcea-4939-bc1e-5437445c9277 | Request started: POST http://127.0.0.1:8000/api/v1/users
+2026-01-27 10:40:43.125 | INFO     | - | 127.0.0.1:3117 - "POST /api/v1/users HTTP/1.1" 200
+2026-01-27 10:41:03.561 | INFO     | 5f96adf8-adf9-4671-bea7-b7f909c060a8 | Request started: POST http://127.0.0.1:8000/api/v1/users
+2026-01-27 10:41:07.223 | INFO     | - | 127.0.0.1:1890 - "POST /api/v1/users HTTP/1.1" 200
+2026-01-27 10:41:15.002 | INFO     | c969b1fe-9918-4123-959c-fe01b5860ee6 | Request started: POST http://127.0.0.1:8000/api/v1/users
+2026-01-27 10:41:15.033 | INFO     | - | 127.0.0.1:3868 - "POST /api/v1/users HTTP/1.1" 200
+2026-01-27 10:41:22.228 | INFO     | ab5885fb-2135-4810-b356-c63b54c8184f | Request started: POST http://127.0.0.1:8000/api/v1/users
+2026-01-27 10:41:22.245 | INFO     | - | 127.0.0.1:13274 - "POST /api/v1/users HTTP/1.1" 200
+2026-01-27 10:42:03.362 | INFO     | 7af6ec73-acb1-409c-9a83-9361788265e2 | Request started: POST http://127.0.0.1:8000/api/v1/listen/start
+2026-01-27 10:42:03.366 | INFO     | - | 127.0.0.1:14011 - "POST /api/v1/listen/start HTTP/1.1" 200
+2026-01-27 11:00:06.805 | INFO     | - | Shutting down
+2026-01-27 11:00:06.913 | INFO     | - | Waiting for application shutdown.
+2026-01-27 11:00:06.914 | INFO     | - | Application shutdown complete.
+2026-01-27 11:00:06.915 | INFO     | - | Finished server process [32556]

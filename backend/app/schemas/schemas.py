@@ -40,12 +40,20 @@ class UserResponse(BaseModel):
     """
     用户响应模型
     """
-    id: int
-    user_name: str
-    sessdata: str
+    id: int = Field(..., description="用户ID")
+    user_name: str = Field(..., max_length=64, description="用户名称")
+    sessdata: str = Field(..., max_length=512, description="Sessdata Cookie值")
 
     class Config:
         from_attributes = True
+
+class StartListenResponse(BaseModel):
+    message: str = Field(..., description="监听成功消息")
+    stream_url: str = Field(..., description="直播流URL")
+    protocol: str = Field(..., description="直播流协议")
+
+class StopListenResponse(BaseModel):
+    message: str = Field(..., description="取消监听成功消息")
 
 # ----------------- 数据库交互模型 (DTO) -----------------
 

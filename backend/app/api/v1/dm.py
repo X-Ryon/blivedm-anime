@@ -2,23 +2,20 @@
 from typing import Optional
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, BackgroundTasks, Query
 from backend.app.services.blive_service import blive_service
+from backend.app.services.user_service import user_service
 from backend.app.schemas import schemas
 
 router = APIRouter()
 
-from backend.database.db import AsyncSessionLocal
-from backend.app.crud import crud
-
 # ----------------- 用户管理接口 -----------------
 
-@router.post("/users")
+@router.post("/users", response_model=schemas.UserResponse)
 async def create_user(user: schemas.UserCreate):
     """
     注册/更新用户信息 (用户名和 SESSDATA)
     """
-    async with AsyncSessionLocal() as db:
-        db_user = await crud.create_user(db, user)
-        return {"message": f"User {db_user.user_name} saved successfully", "user_name": db_user.user_name}
+    db_user = await user_service.create_user(user)
+    return db_user
 
 # ----------------- WebSocket 接口 -----------------
 
@@ -41,7 +38,7 @@ async def websocket_listen_endpoint(
 
 # ----------------- RESTful 控制接口 -----------------
 
-@router.post("/listen/start")
+@router.post("/listen/start", response_model=schemas.StartListenResponse)
 async def start_listen(request: schemas.ListenRequest, background_tasks: BackgroundTasks):
     """
     接口: 启动监听任务 (通常由 WebSocket 自动触发，也可手动调用)
@@ -55,7 +52,7 @@ async def start_listen(request: schemas.ListenRequest, background_tasks: Backgro
         "protocol": "websocket"
     }
 
-@router.post("/listen/stop")
+@router.post("/listen/stop", response_model=schemas.StopListenResponse)
 async def stop_listen(request: schemas.ListenRequest):
     """
     接口: 停止监听任务

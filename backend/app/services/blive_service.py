@@ -5,7 +5,7 @@ from blivedm.models import web as web_models
 from typing import Dict, List, Set, Optional, Union
 from fastapi import WebSocket
 from backend.app.schemas import schemas
-from backend.app.crud import crud
+from backend.app.crud.crud import crud_dao
 from backend.database.db import AsyncSessionLocal
 import aiohttp
 from backend.core.conf import settings
@@ -109,7 +109,7 @@ class BilibiliHandler(blivedm.BaseHandler):
                 identity=identity,
                 dm_text=message.msg
             )
-            await crud.create_danmaku(db, data)
+            await crud_dao.create_danmaku(db, data)
 
     async def _save_super_chat(self, message):
         async with AsyncSessionLocal() as db:
@@ -123,7 +123,7 @@ class BilibiliHandler(blivedm.BaseHandler):
                 sc_text=message.message,
                 price=message.price
             )
-            await crud.create_super_chat(db, data)
+            await crud_dao.create_super_chat(db, data)
 
     async def _save_gift(self, message):
         async with AsyncSessionLocal() as db:
@@ -138,7 +138,7 @@ class BilibiliHandler(blivedm.BaseHandler):
                 gift_num=message.num,
                 price=float(message.total_coin) / 1000.0
             )
-            await crud.create_gift(db, data)
+            await crud_dao.create_gift(db, data)
 
     async def _save_guard(self, message, privilege_name):
         async with AsyncSessionLocal() as db:
@@ -157,7 +157,7 @@ class BilibiliHandler(blivedm.BaseHandler):
                 gift_num=message.num,
                 price=float(message.price) / 1000.0
             )
-            await crud.create_gift(db, data)
+            await crud_dao.create_gift(db, data)
 
 class BLiveService:
     def __init__(self):
@@ -179,7 +179,7 @@ class BLiveService:
         sessdata = None
         if user_name:
             async with AsyncSessionLocal() as db:
-                user = await crud.get_user_by_name(db, user_name)
+                user = await crud_dao.get_user_by_name(db, user_name)
                 if user:
                     sessdata = user.sessdata
                     print(f"Found SESSDATA for user {user_name}")
@@ -226,7 +226,7 @@ class BLiveService:
                             title=title,
                             host=host_name or "Unknown"
                         )
-                        await crud.create_or_update_room(db, room_data)
+                        await crud_dao.create_or_update_room(db, room_data)
                         print(f"Room info saved: {title}, Host: {host_name}")
         except Exception as e:
             print(f"Failed to fetch room info: {e}")
@@ -260,7 +260,7 @@ class BLiveService:
                                 user_name=uname,
                                 sessdata=sessdata
                             )
-                            await crud.create_user(db, user_data)
+                            await crud_dao.create_user(db, user_data)
                             print(f"User info saved: {uname}")
             except Exception as e:
                 print(f"Failed to fetch user info: {e}")
