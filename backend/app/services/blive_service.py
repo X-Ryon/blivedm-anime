@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import asyncio
+from loguru import logger
 # 使用本地 blivedm
 from backend.blivedm import blivedm
 from backend.blivedm.blivedm.models import web as web_models
@@ -44,31 +45,32 @@ class BilibiliHandler(blivedm.BaseHandler):
             msg_type="danmaku"
         )
         
-        print(f"房间:{self.room_id}，用户名:{message.uname}，弹幕: {message.msg}，舰队:{privilege_name}，身份:{identity}")
+        logger.info(f"[弹幕]房间:{self.room_id}，用户名:{message.uname}，弹幕: {message.msg}，舰队:{privilege_name}，身份:{identity}")
         asyncio.create_task(self.service.broadcast(self.room_id, resp))
         asyncio.create_task(self._save_danmaku(message, privilege_name, identity))
-        
-    # 本地 blivedm 已经修改支持解析 reply_uname，这里不再需要手动解析
-    # def handle(self, client: blivedm.BLiveClient, command: dict):
-    #     ...
 
 
     def _on_super_chat(self, client: blivedm.BLiveClient, message: web_models.SuperChatMessage):
+        privilege_name = PRIVILEGE_MAP.get(message.privilege_type, "普通")
+        identity = "房管" if message.admin else ("主播" if message.privilege_type == 1 else "普通")
+
         resp = dm_schema.DanmakuResponse(
             user_name=message.uname,
             level=message.medal_level if message.medal_level else 0,
-            privilege_name="普通",
+            privilege_name=privilege_name,
             dm_text=message.message,
-            identity="普通",
+            identity=identity,
+            face_img=message.face,
             price=message.price,
             msg_type="super_chat"
         )
+        logger.info(f"[sc]房间:{self.room_id}，用户名:{message.uname}，sc: {message.message}，价值:{message.price}元")
         asyncio.create_task(self.service.broadcast(self.room_id, resp))
         asyncio.create_task(self._save_super_chat(message))
 
     def _on_gift(self, client: blivedm.BLiveClient, message: web_models.GiftMessage):
         currency = "银瓜子"
-        price = float(message.total_coin)
+        price = float(message.total_coin)/1000.0
         if message.coin_type == 'gold':
             currency = "金瓜子"
             pass
@@ -77,36 +79,44 @@ class BilibiliHandler(blivedm.BaseHandler):
             user_name=message.uname,
             level=message.medal_level if message.medal_level else 0,
             privilege_name="普通",
+            num=message.num,
             gift_type=message.gift_name,
-            price=price/1000.0,
+            price=price,
             msg_type="gift"
         )
+        logger.info(f"[礼物]房间:{self.room_id}，用户名:{message.uname}，gift: {message.gift_name}，数量:{message.num}，单价:{price}元")
         asyncio.create_task(self.service.broadcast(self.room_id, resp))
         asyncio.create_task(self._save_gift(message))
 
     def _on_buy_guard(self, client: blivedm.BLiveClient, message: web_models.GuardBuyMessage):
-        guard_name = PRIVILEGE_MAP.get(message.guard_level, "未知舰队")
+        guard_name = PRIVILEGE_MAP.get(message.guard_level, "舰队")
+        price=float(message.price) / 1000.0
         resp = dm_schema.GiftResponse(
-            user_name=message.username,
+            user_name=message.uname,
             level=0,
             privilege_name=guard_name,
             gift_type=guard_name,
-            price=float(message.price) / 1000.0, # price is usually in 1000s
+            num=message.num,
+            price=price,
             msg_type="guard"
         )
+        logger.info(f"[舰队]房间:{self.room_id}，用户名:{message.uname}，舰队: {guard_name}，数量:{message.num}，单价:{price}元")
         asyncio.create_task(self.service.broadcast(self.room_id, resp))
         asyncio.create_task(self._save_guard(message, guard_name))
 
     def _on_user_toast_v2(self, client: blivedm.BLiveClient, message: web_models.UserToastV2Message):
-        guard_name = PRIVILEGE_MAP.get(message.guard_level, "未知舰队")
+        guard_name = PRIVILEGE_MAP.get(message.guard_level, "舰队")
+        price=float(message.price) / 1000.0
         resp = dm_schema.GiftResponse(
-            user_name=message.username,
+            user_name=message.uname,
             level=message.medal_level if message.medal_level else 0,
             privilege_name=guard_name,
             gift_type=guard_name,
-            price=float(message.price) / 1000.0,
+            num=message.num,
+            price=price,
             msg_type="guard"
         )
+        logger.info(f"[舰队]房间:{self.room_id}，用户名:{message.uname}，舰队: {guard_name}，数量:{message.num}，单价:{price}元")
         asyncio.create_task(self.service.broadcast(self.room_id, resp))
         asyncio.create_task(self._save_guard(message, guard_name))
 
@@ -120,13 +130,14 @@ class BilibiliHandler(blivedm.BaseHandler):
                     level=message.medal_level if message.medal_level else 0,
                     privilege_name=privilege_name,
                     identity=identity,
+                    face_img=message.face,
                     dm_text=message.msg
                 )
                 await crud_danmaku.create_danmaku(db, data)
                 await db.commit()
             except Exception as e:
                 await db.rollback()
-                print(f"Failed to save danmaku: {e}")
+                logger.error(f"保存弹幕失败: {e}")
 
     async def _save_super_chat(self, message):
         async with AsyncSessionLocal() as db:
@@ -138,6 +149,7 @@ class BilibiliHandler(blivedm.BaseHandler):
                     level=message.medal_level if message.medal_level else 0,
                     privilege_name="普通", # SC doesn't always carry guard info easily, defaulting
                     identity="普通", # Defaulting
+                    face_img=message.face,
                     sc_text=message.message,
                     price=message.price
                 )
@@ -145,7 +157,7 @@ class BilibiliHandler(blivedm.BaseHandler):
                 await db.commit()
             except Exception as e:
                 await db.rollback()
-                print(f"Failed to save super chat: {e}")
+                logger.error(f"保存sc失败: {e}")
 
     async def _save_gift(self, message):
         async with AsyncSessionLocal() as db:
@@ -157,15 +169,16 @@ class BilibiliHandler(blivedm.BaseHandler):
                     level=message.medal_level if message.medal_level else 0,
                     privilege_name="普通", # Gift message might not have guard info
                     identity="普通",
+                    face_img=message.face,
                     gift_name=message.gift_name,
                     gift_num=message.num,
-                    price=float(message.total_coin) / 1000.0
+                    price=float(message.total_coin)/1000.0
                 )
                 await crud_danmaku.create_gift(db, data)
                 await db.commit()
             except Exception as e:
                 await db.rollback()
-                print(f"Failed to save gift: {e}")
+                logger.error(f"保存礼物失败: {e}")
 
     async def _save_guard(self, message, privilege_name):
         async with AsyncSessionLocal() as db:
@@ -173,7 +186,10 @@ class BilibiliHandler(blivedm.BaseHandler):
                 level = 0
                 if hasattr(message, 'medal_level') and message.medal_level:
                     level = message.medal_level
-
+                
+                face = ''
+                if hasattr(message, 'face'):
+                    face = message.face
                 data = dm_schema.GiftCreate(
                     room_id=str(self.room_id),
                     user_name=message.username,
@@ -181,6 +197,7 @@ class BilibiliHandler(blivedm.BaseHandler):
                     level=level, 
                     privilege_name=privilege_name,
                     identity="普通",
+                    face_img=face,
                     gift_name=privilege_name,
                     gift_num=message.num,
                     price=float(message.price) / 1000.0
@@ -189,7 +206,7 @@ class BilibiliHandler(blivedm.BaseHandler):
                 await db.commit()
             except Exception as e:
                 await db.rollback()
-                print(f"Failed to save guard: {e}")
+                logger.error(f"保存舰队失败: {e}")
 
 class BLiveService:
     def __init__(self):

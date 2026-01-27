@@ -12,5 +12,6 @@ class User(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     user_name: Mapped[str] = mapped_column(String(64))
+    face_img: Mapped[str] = mapped_column(String(255), nullable=True)
     sessdata: Mapped[str] = mapped_column(String(512))
     create_time: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=timezone.now)

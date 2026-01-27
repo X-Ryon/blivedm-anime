@@ -362,6 +362,8 @@ class GuardBuyMessage:
     """用户ID"""
     username: str = ''
     """用户名"""
+    face: str = ''
+    """用户头像URL"""
     guard_level: int = 0
     """舰队等级，0非舰队，1总督，2提督，3舰长"""
     num: int = 0  # 可以理解为礼物数量？
@@ -431,6 +433,7 @@ class UserToastV2Message:
         return cls(
             uid=sender_info['uid'],
             username=sender_info['base']['name'],
+            face=sender_info['base']['face'],
             guard_level=guard_info['guard_level'],
             num=pay_info['num'],
             price=pay_info['price'],

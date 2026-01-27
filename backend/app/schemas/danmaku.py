@@ -23,6 +23,7 @@ class GiftResponse(BaseModel):
     level: int = Field(default=0, description="粉丝牌等级")
     privilege_name: str = Field(..., max_length=64, description="身份名称：普通、舰长、提督、总督")
     gift_type: str = Field(..., max_length=255, description="礼物名称或上舰类型")
+    num: int = Field(default=0, description="礼物数量")
     price: float = Field(default=0.0, description="礼物价值(元)")
     msg_type: str = Field(default="gift", description="消息类型: gift, guard")
 
@@ -50,6 +51,7 @@ class DanmakuCreate(BaseModel):
     level: int = Field(default=0, description="粉丝牌等级")
     privilege_name: str = Field(default="普通", max_length=64, description="身份名称")
     identity: str = Field(default="普通", max_length=64, description="直播间身份")
+    face_img: Optional[str] = Field(default=None, max_length=255, description="用户头像URL")
     dm_text: str = Field(..., max_length=255, description="弹幕内容")
 
 class SuperChatCreate(BaseModel):
@@ -69,6 +71,7 @@ class GiftCreate(BaseModel):
     level: int = Field(default=0, description="粉丝牌等级")
     privilege_name: str = Field(default="普通", max_length=64, description="身份名称")
     identity: str = Field(default="普通", max_length=64, description="直播间身份")
+    face_img: Optional[str] = Field(default=None, max_length=255, description="用户头像URL")
     gift_name: str = Field(..., max_length=255, description="礼物名称")
     gift_num: int = Field(default=1, description="礼物数量")
     price: float = Field(default=0.0, description="礼物总价值")
