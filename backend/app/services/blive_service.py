@@ -211,7 +211,7 @@ class BLiveService:
         sessdata = None
         if user_name:
             async with AsyncSessionLocal() as db:
-                user = await crud_dao.get_user_by_name(db, user_name)
+                user = await crud_user.get_user_by_name(db, user_name)
                 if user:
                     sessdata = user.sessdata
                     print(f"Found SESSDATA for user {user_name}")
@@ -254,12 +254,12 @@ class BLiveService:
                     
                     async with AsyncSessionLocal() as db:
                         try:
-                            room_data = schemas.RoomCreate(
+                            room_data = room_schema.RoomCreate(
                                 room_id=str(room_id),
                                 title=title,
                                 host=host_name or "Unknown"
                             )
-                            await crud_dao.create_or_update_room(db, room_data)
+                            await crud_room.create_or_update_room(db, room_data)
                             await db.commit()
                             print(f"Room info saved: {title}, Host: {host_name}")
                         except Exception as e:

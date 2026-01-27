@@ -47,7 +47,7 @@ class GiftService:
 
         for gift in merged:
             name = gift.get("name")
-            price = float(gift.get("price", 0))
+            price = float(gift.get("price", 0))/1000.0
             coin_type = gift.get("coin_type") or "gold"
             img = gift.get("img_basic") or gift.get("img_dynamic") or ""
             gifts.append(dm_schema.GiftInfoRoomCreate(
