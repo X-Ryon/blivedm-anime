@@ -5,8 +5,12 @@ from backend.blivedm import blivedm
 from backend.blivedm.blivedm.models import web as web_models
 from typing import Dict, List, Set, Optional, Union
 from fastapi import WebSocket
-from backend.app.schemas import schemas
-from backend.app.crud.crud import crud_dao
+from backend.app.schemas import danmaku as dm_schema
+from backend.app.schemas import user as user_schema
+from backend.app.schemas import room as room_schema
+from backend.app.crud.danmaku import crud_danmaku
+from backend.app.crud.user import crud_user
+from backend.app.crud.room import crud_room
 from backend.database.db import AsyncSessionLocal
 import aiohttp
 from backend.core.conf import settings
@@ -30,7 +34,7 @@ class BilibiliHandler(blivedm.BaseHandler):
         privilege_name = PRIVILEGE_MAP.get(message.privilege_type, "普通")
         identity = "房管" if message.admin else ("主播" if message.privilege_type == 1 else "普通")
 
-        resp = schemas.DanmakuResponse(
+        resp = dm_schema.DanmakuResponse(
             user_name=message.uname,
             level=message.medal_level if message.medal_level else 0,
             privilege_name=privilege_name,
@@ -50,7 +54,7 @@ class BilibiliHandler(blivedm.BaseHandler):
 
 
     def _on_super_chat(self, client: blivedm.BLiveClient, message: web_models.SuperChatMessage):
-        resp = schemas.DanmakuResponse(
+        resp = dm_schema.DanmakuResponse(
             user_name=message.uname,
             level=message.medal_level if message.medal_level else 0,
             privilege_name="普通",
@@ -69,7 +73,7 @@ class BilibiliHandler(blivedm.BaseHandler):
             currency = "金瓜子"
             pass
 
-        resp = schemas.GiftResponse(
+        resp = dm_schema.GiftResponse(
             user_name=message.uname,
             level=message.medal_level if message.medal_level else 0,
             privilege_name="普通",
@@ -82,7 +86,7 @@ class BilibiliHandler(blivedm.BaseHandler):
 
     def _on_buy_guard(self, client: blivedm.BLiveClient, message: web_models.GuardBuyMessage):
         guard_name = PRIVILEGE_MAP.get(message.guard_level, "未知舰队")
-        resp = schemas.GiftResponse(
+        resp = dm_schema.GiftResponse(
             user_name=message.username,
             level=0,
             privilege_name=guard_name,
@@ -95,7 +99,7 @@ class BilibiliHandler(blivedm.BaseHandler):
 
     def _on_user_toast_v2(self, client: blivedm.BLiveClient, message: web_models.UserToastV2Message):
         guard_name = PRIVILEGE_MAP.get(message.guard_level, "未知舰队")
-        resp = schemas.GiftResponse(
+        resp = dm_schema.GiftResponse(
             user_name=message.username,
             level=message.medal_level if message.medal_level else 0,
             privilege_name=guard_name,
@@ -108,64 +112,84 @@ class BilibiliHandler(blivedm.BaseHandler):
 
     async def _save_danmaku(self, message, privilege_name, identity):
         async with AsyncSessionLocal() as db:
-            data = schemas.DanmakuCreate(
-                room_id=str(self.room_id),
-                user_name=message.uname,
-                uid=str(message.uid),
-                level=message.medal_level if message.medal_level else 0,
-                privilege_name=privilege_name,
-                identity=identity,
-                dm_text=message.msg
-            )
-            await crud_dao.create_danmaku(db, data)
+            try:
+                data = dm_schema.DanmakuCreate(
+                    room_id=str(self.room_id),
+                    user_name=message.uname,
+                    uid=str(message.uid),
+                    level=message.medal_level if message.medal_level else 0,
+                    privilege_name=privilege_name,
+                    identity=identity,
+                    dm_text=message.msg
+                )
+                await crud_danmaku.create_danmaku(db, data)
+                await db.commit()
+            except Exception as e:
+                await db.rollback()
+                print(f"Failed to save danmaku: {e}")
 
     async def _save_super_chat(self, message):
         async with AsyncSessionLocal() as db:
-            data = schemas.SuperChatCreate(
-                room_id=str(self.room_id),
-                user_name=message.uname,
-                uid=str(message.uid),
-                level=message.medal_level if message.medal_level else 0,
-                privilege_name="普通", # SC doesn't always carry guard info easily, defaulting
-                identity="普通", # Defaulting
-                sc_text=message.message,
-                price=message.price
-            )
-            await crud_dao.create_super_chat(db, data)
+            try:
+                data = dm_schema.SuperChatCreate(
+                    room_id=str(self.room_id),
+                    user_name=message.uname,
+                    uid=str(message.uid),
+                    level=message.medal_level if message.medal_level else 0,
+                    privilege_name="普通", # SC doesn't always carry guard info easily, defaulting
+                    identity="普通", # Defaulting
+                    sc_text=message.message,
+                    price=message.price
+                )
+                await crud_danmaku.create_super_chat(db, data)
+                await db.commit()
+            except Exception as e:
+                await db.rollback()
+                print(f"Failed to save super chat: {e}")
 
     async def _save_gift(self, message):
         async with AsyncSessionLocal() as db:
-            data = schemas.GiftCreate(
-                room_id=str(self.room_id),
-                user_name=message.uname,
-                uid=str(message.uid),
-                level=message.medal_level if message.medal_level else 0,
-                privilege_name="普通", # Gift message might not have guard info
-                identity="普通",
-                gift_name=message.gift_name,
-                gift_num=message.num,
-                price=float(message.total_coin) / 1000.0
-            )
-            await crud_dao.create_gift(db, data)
+            try:
+                data = dm_schema.GiftCreate(
+                    room_id=str(self.room_id),
+                    user_name=message.uname,
+                    uid=str(message.uid),
+                    level=message.medal_level if message.medal_level else 0,
+                    privilege_name="普通", # Gift message might not have guard info
+                    identity="普通",
+                    gift_name=message.gift_name,
+                    gift_num=message.num,
+                    price=float(message.total_coin) / 1000.0
+                )
+                await crud_danmaku.create_gift(db, data)
+                await db.commit()
+            except Exception as e:
+                await db.rollback()
+                print(f"Failed to save gift: {e}")
 
     async def _save_guard(self, message, privilege_name):
         async with AsyncSessionLocal() as db:
-            level = 0
-            if hasattr(message, 'medal_level') and message.medal_level:
-                level = message.medal_level
+            try:
+                level = 0
+                if hasattr(message, 'medal_level') and message.medal_level:
+                    level = message.medal_level
 
-            data = schemas.GiftCreate(
-                room_id=str(self.room_id),
-                user_name=message.username,
-                uid=str(message.uid),
-                level=level, 
-                privilege_name=privilege_name,
-                identity="普通",
-                gift_name=privilege_name,
-                gift_num=message.num,
-                price=float(message.price) / 1000.0
-            )
-            await crud_dao.create_gift(db, data)
+                data = dm_schema.GiftCreate(
+                    room_id=str(self.room_id),
+                    user_name=message.username,
+                    uid=str(message.uid),
+                    level=level, 
+                    privilege_name=privilege_name,
+                    identity="普通",
+                    gift_name=privilege_name,
+                    gift_num=message.num,
+                    price=float(message.price) / 1000.0
+                )
+                await crud_danmaku.create_gift(db, data)
+                await db.commit()
+            except Exception as e:
+                await db.rollback()
+                print(f"Failed to save guard: {e}")
 
 class BLiveService:
     def __init__(self):
@@ -229,13 +253,18 @@ class BLiveService:
                     host_name = await self._fetch_user_name_by_uid(host_uid, session)
                     
                     async with AsyncSessionLocal() as db:
-                        room_data = schemas.RoomCreate(
-                            room_id=str(room_id),
-                            title=title,
-                            host=host_name or "Unknown"
-                        )
-                        await crud_dao.create_or_update_room(db, room_data)
-                        print(f"Room info saved: {title}, Host: {host_name}")
+                        try:
+                            room_data = schemas.RoomCreate(
+                                room_id=str(room_id),
+                                title=title,
+                                host=host_name or "Unknown"
+                            )
+                            await crud_dao.create_or_update_room(db, room_data)
+                            await db.commit()
+                            print(f"Room info saved: {title}, Host: {host_name}")
+                        except Exception as e:
+                            await db.rollback()
+                            print(f"Failed to save room info: {e}")
         except Exception as e:
             print(f"Failed to fetch room info: {e}")
         finally:
@@ -264,12 +293,17 @@ class BLiveService:
                     if data['code'] == 0:
                         uname = data['data']['uname']
                         async with AsyncSessionLocal() as db:
-                            user_data = schemas.UserCreate(
-                                user_name=uname,
-                                sessdata=sessdata
-                            )
-                            await crud_dao.create_user(db, user_data)
-                            print(f"User info saved: {uname}")
+                            try:
+                                user_data = schemas.UserCreate(
+                                    user_name=uname,
+                                    sessdata=sessdata
+                                )
+                                await crud_dao.create_user(db, user_data)
+                                await db.commit()
+                                print(f"User info saved: {uname}")
+                            except Exception as e:
+                                await db.rollback()
+                                print(f"Failed to save user info: {e}")
             except Exception as e:
                 print(f"Failed to fetch user info: {e}")
 
@@ -305,7 +339,7 @@ class BLiveService:
             if websocket in self.connections[room_id]:
                 self.connections[room_id].remove(websocket)
 
-    async def broadcast(self, room_id: int, data: Union[schemas.DanmakuResponse, schemas.GiftResponse]):
+    async def broadcast(self, room_id: int, data: Union[dm_schema.DanmakuResponse, dm_schema.GiftResponse]):
         """
         广播消息到所有连接
         """

@@ -23,6 +23,7 @@ class Settings(BaseSettings):
     BILIBILI_API_ROOM_INFO: str = "https://api.live.bilibili.com/room/v1/Room/get_info"
     BILIBILI_API_USER_INFO: str = "https://api.bilibili.com/x/web-interface/nav"
     BILIBILI_API_LIVE_USER_INFO: str = "https://api.live.bilibili.com/live_user/v1/Master/info"
+    BILIBILI_API_GIFT_LIST: str = "https://api.live.bilibili.com/xlive/web-room/v1/giftPanel/roomGiftList"
     
     # User-Agent
     USER_AGENT: str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"

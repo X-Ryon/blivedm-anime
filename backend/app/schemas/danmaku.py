@@ -1,15 +1,5 @@
-# -*- coding: utf-8 -*-
 from pydantic import BaseModel, Field
 from typing import Optional
-
-# ----------------- 请求模型 -----------------
-
-class ListenRequest(BaseModel):
-    """
-    监听请求体
-    """
-    room_id: str = Field(..., max_length=64, description="房间号")
-    user_name: Optional[str] = Field(default=None, max_length=64, description="用户名称，用于查找数据库中的 Cookie")
 
 # ----------------- 响应模型 (推送到客户端的数据格式) -----------------
 
@@ -36,28 +26,20 @@ class GiftResponse(BaseModel):
     price: float = Field(default=0.0, description="礼物价值(元)")
     msg_type: str = Field(default="gift", description="消息类型: gift, guard")
 
-class UserResponse(BaseModel):
-    """
-    用户响应模型
-    """
-    id: int = Field(..., description="用户ID")
-    user_name: str = Field(..., max_length=64, description="用户名称")
-    sessdata: str = Field(..., max_length=512, description="Sessdata Cookie值")
+class GiftInfoRoomResponse(BaseModel):
+    id: int = Field(..., description="礼物ID")
+    name: str = Field(..., max_length=64, description="礼物名称")
+    price: float = Field(..., description="礼物价格")
+    coin_type: str = Field(..., max_length=64, description="货币类型")
+    img: str = Field(..., max_length=255, description="礼物图片")
 
     class Config:
         from_attributes = True
 
-class StartListenResponse(BaseModel):
-    message: str = Field(..., description="监听成功消息")
-    stream_url: str = Field(..., description="直播流URL")
-    protocol: str = Field(..., description="直播流协议")
-
-class StopListenResponse(BaseModel):
-    message: str = Field(..., description="取消监听成功消息")
-
-class DeleteUserResponse(BaseModel):
-    success: bool = Field(..., description="是否删除成功")
+class FetchGiftInfoResponse(BaseModel):
     message: str = Field(..., description="操作消息")
+    count: int = Field(..., description="礼物数量")
+    gifts: list[GiftInfoRoomResponse] = Field(default_factory=list, description="礼物列表")
 
 # ----------------- 数据库交互模型 (DTO) -----------------
 
@@ -80,11 +62,6 @@ class SuperChatCreate(BaseModel):
     sc_text: str = Field(..., max_length=255, description="SC内容")
     price: float = Field(default=0.0, description="SC金额")
 
-class RoomCreate(BaseModel):
-    room_id: str = Field(..., max_length=64, description="房间号")
-    title: Optional[str] = Field(default=None, max_length=255, description="直播间标题")
-    host: Optional[str] = Field(default=None, max_length=64, description="主播名称")
-
 class GiftCreate(BaseModel):
     room_id: str = Field(..., max_length=64, description="房间号")
     user_name: str = Field(..., max_length=64, description="用户名称")
@@ -96,6 +73,12 @@ class GiftCreate(BaseModel):
     gift_num: int = Field(default=1, description="礼物数量")
     price: float = Field(default=0.0, description="礼物总价值")
 
-class UserCreate(BaseModel):
-    user_name: str = Field(..., max_length=64, description="用户名称")
-    sessdata: str = Field(..., max_length=512, description="B站 SESSDATA")
+class GiftInfoRoomCreate(BaseModel):
+    name: str = Field(..., max_length=64, description="礼物名称")
+    price: float = Field(..., description="礼物价格")
+    coin_type: str = Field(..., max_length=64, description="货币类型")
+    img: str = Field(..., max_length=255, description="礼物图片")
+
+class FetchGiftInfoRequest(BaseModel):
+    room_id: str = Field(..., max_length=64, description="房间号")
+    user_name: Optional[str] = Field(default=None, max_length=64, description="用户名称，用于查找数据库中的 Cookie")

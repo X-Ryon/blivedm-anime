@@ -1,32 +1,8 @@
-# -*- coding: utf-8 -*-
-from datetime import datetime
-from sqlalchemy import String, Integer, Float, DateTime, func
-from sqlalchemy.orm import Mapped, mapped_column
 from backend.database.db import Base
 from backend.utils.timezone import timezone
-
-class Room(Base):
-    """
-    直播间模型
-    """
-    __tablename__ = "rooms"
-
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    room_id: Mapped[str] = mapped_column(String(64), index=True)
-    title: Mapped[str] = mapped_column(String(64), nullable=True)
-    host: Mapped[str] = mapped_column(String(64), nullable=True)
-    create_time: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=timezone.now)
-
-class User(Base):
-    """
-    用户数据模型
-    """
-    __tablename__ = "users"
-
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    user_name: Mapped[str] = mapped_column(String(64))
-    sessdata: Mapped[str] = mapped_column(String(512))
-    create_time: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=timezone.now)
+from sqlalchemy import String, Integer, Float, DateTime
+from sqlalchemy.orm import Mapped, mapped_column
+from datetime import datetime
 
 class Danmaku(Base):
     """
@@ -78,3 +54,15 @@ class SuperChat(Base):
     sc_text: Mapped[str] = mapped_column(String(255))
     price: Mapped[float] = mapped_column(Float)
     create_time: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=timezone.now)
+
+class GiftInfoRoom(Base):
+    """
+    房间可赠送礼物信息模型
+    """
+    __tablename__ = "gift_info_room"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    name: Mapped[str] = mapped_column(String(64))
+    price: Mapped[float] = mapped_column(Float)
+    coin_type: Mapped[str] = mapped_column(String(64))
+    img: Mapped[str] = mapped_column(String(255))

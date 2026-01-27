@@ -1,0 +1,22 @@
+from pydantic import BaseModel, Field
+from typing import Optional
+
+class RoomCreate(BaseModel):
+    room_id: str = Field(..., max_length=64, description="房间号")
+    title: Optional[str] = Field(default=None, max_length=255, description="直播间标题")
+    host: Optional[str] = Field(default=None, max_length=64, description="主播名称")
+
+class ListenRequest(BaseModel):
+    """
+    监听请求体
+    """
+    room_id: str = Field(..., max_length=64, description="房间号")
+    user_name: Optional[str] = Field(default=None, max_length=64, description="用户名称，用于查找数据库中的 Cookie")
+
+class StartListenResponse(BaseModel):
+    message: str = Field(..., description="监听成功消息")
+    stream_url: str = Field(..., description="直播流URL")
+    protocol: str = Field(..., description="直播流协议")
+
+class StopListenResponse(BaseModel):
+    message: str = Field(..., description="取消监听成功消息")

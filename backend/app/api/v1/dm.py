@@ -3,21 +3,24 @@ from typing import Optional
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, BackgroundTasks, Query
 from backend.app.services.blive_service import blive_service
 from backend.app.services.user_service import user_service
-from backend.app.schemas import schemas
+from backend.app.services.gift_service import gift_service
+from backend.app.schemas import user as user_schema
+from backend.app.schemas import room as room_schema
+from backend.app.schemas import danmaku as dm_schema
 
 router = APIRouter()
 
 # ----------------- 用户管理接口 -----------------
 
-@router.post("/users", response_model=schemas.UserResponse)
-async def create_user(user: schemas.UserCreate):
+@router.post("/users", response_model=user_schema.UserResponse)
+async def create_user(user: user_schema.UserCreate):
     """
     注册/更新用户信息 (用户名和 SESSDATA)
     """
     db_user = await user_service.create_user(user)
     return db_user
 
-@router.delete("/users", response_model=schemas.DeleteUserResponse)
+@router.delete("/users", response_model=user_schema.DeleteUserResponse)
 async def delete_user(user_name: str = Query(..., description="要删除的用户名")):
     """
     删除已保存的用户信息
@@ -26,6 +29,16 @@ async def delete_user(user_name: str = Query(..., description="要删除的用�
     return {
         "success": success,
         "message": f"用户 {user_name} 删除成功" if success else f"用户 {user_name} 不存在"
+    }
+
+@router.post("/gift-info-room", response_model=dm_schema.FetchGiftInfoResponse)
+async def fetch_gift_info_room(request: dm_schema.FetchGiftInfoRequest):
+    room_id_int = int(request.room_id)
+    gifts = await gift_service.fetch_and_save(room_id_int, request.user_name)
+    return {
+        "message": f"房间 {request.room_id} 礼物列表已更新",
+        "count": len(gifts),
+        "gifts": gifts
     }
 
 # ----------------- WebSocket 接口 -----------------
@@ -49,8 +62,8 @@ async def websocket_listen_endpoint(
 
 # ----------------- RESTful 控制接口 -----------------
 
-@router.post("/listen/start", response_model=schemas.StartListenResponse)
-async def start_listen(request: schemas.ListenRequest, background_tasks: BackgroundTasks):
+@router.post("/listen/start", response_model=room_schema.StartListenResponse)
+async def start_listen(request: room_schema.ListenRequest, background_tasks: BackgroundTasks):
     """
     接口: 启动监听任务 (通常由 WebSocket 自动触发，也可手动调用)
     """
@@ -63,8 +76,8 @@ async def start_listen(request: schemas.ListenRequest, background_tasks: Backgro
         "protocol": "websocket"
     }
 
-@router.post("/listen/stop", response_model=schemas.StopListenResponse)
-async def stop_listen(request: schemas.ListenRequest):
+@router.post("/listen/stop", response_model=room_schema.StopListenResponse)
+async def stop_listen(request: room_schema.ListenRequest):
     """
     接口: 停止监听任务
     """
