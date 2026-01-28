@@ -7,7 +7,7 @@
 当前项目主要包含后端服务，前端部分正在规划中。
 
 - **backend/**: 核心逻辑、API 服务及弹幕监听模块。
-- **Frontend**: 暂未开发 (计划采用 **React + Vite** 构建)。
+- **Frontend/**: 暂未开发 (计划采用 **React + Vite** 构建)。
 
 ## 🛠️ 技术栈
 
@@ -34,11 +34,7 @@ pip install -r requirements.txt
 
 ### 2. 运行服务
 ```bash
-# 进入后端目录
-cd backend
-
-# 启动服务
-python main.py
+uvicorn backend.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
 ## 📝 开发计划
@@ -49,5 +45,3 @@ python main.py
 - [ ] **前端开发**: 初始化 React + Vite 项目
 - [ ] 前后端联调
 
-## ⚠️ 注意事项
-- 配置文件 `config.txt` 包含敏感信息，请勿提交到版本控制。
