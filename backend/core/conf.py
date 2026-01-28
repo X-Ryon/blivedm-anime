@@ -1,13 +1,11 @@
 from functools import lru_cache
-from typing import Any, Dict, Literal
+from typing import Literal
 
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
     """全局配置"""
-
-
     # .env 当前环境
     ENVIRONMENT: Literal["dev", "prod"] = "dev"
 
@@ -21,13 +19,19 @@ class Settings(BaseSettings):
 
     # Bilibili API 配置
     BILIBILI_API_ROOM_INFO: str = "https://api.live.bilibili.com/room/v1/Room/get_info"
-    BILIBILI_API_USER_INFO: str = "https://api.bilibili.com/x/web-interface/nav"
     BILIBILI_API_LIVE_USER_INFO: str = "https://api.live.bilibili.com/live_user/v1/Master/info"
     BILIBILI_API_GIFT_LIST: str = "https://api.live.bilibili.com/xlive/web-room/v1/giftPanel/roomGiftList"
+    QR_GENERATE_URL: str = "https://passport.bilibili.com/x/passport-login/web/qrcode/generate"
+    QR_POLL_URL: str = "https://passport.bilibili.com/x/passport-login/web/qrcode/poll"
+    QR_API_URL: str = "https://api.qrserver.com/v1/create-qr-code/"
+    USER_INFO_URL: str = "https://api.bilibili.com/x/web-interface/nav"
+    USER_SPACE_URL: str = "https://api.bilibili.com/x/space/acc/info"
     
-    # User-Agent
-    USER_AGENT: str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-
+    HEADERS: dict[str, str] = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+        "Referer": "https://www.bilibili.com/"
+    }
+    
     # 数据库配置
     DATABASE_URL: str = "sqlite:///dmjdb.db"
 

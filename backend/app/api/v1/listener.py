@@ -2,7 +2,7 @@
 from typing import Optional
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, BackgroundTasks, Query
 from backend.app.services.blive_service import blive_service
-from backend.app.schemas import room as room_schema
+from backend.app.schemas.room import ListenRequest, StartListenResponse, StopListenResponse
 
 router = APIRouter(prefix="/listener", tags=["直播弹幕接口"])
 
@@ -27,8 +27,8 @@ async def websocket_listen_endpoint(
 
 # ----------------- RESTful 控制接口 -----------------
 
-@router.post("/start", response_model=room_schema.StartListenResponse)
-async def start_listen(request: room_schema.ListenRequest, background_tasks: BackgroundTasks):
+@router.post("/start", response_model=StartListenResponse)
+async def start_listen(request: ListenRequest, background_tasks: BackgroundTasks):
     """
     接口: 启动监听任务 (通常由 WebSocket 自动触发，也可手动调用)
     """
@@ -41,8 +41,8 @@ async def start_listen(request: room_schema.ListenRequest, background_tasks: Bac
         "protocol": "websocket"
     }
 
-@router.post("/stop", response_model=room_schema.StopListenResponse)
-async def stop_listen(request: room_schema.ListenRequest):
+@router.post("/stop", response_model=StopListenResponse)
+async def stop_listen(request: ListenRequest):
     """
     接口: 停止监听任务
     """

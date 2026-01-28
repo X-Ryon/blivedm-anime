@@ -7,6 +7,8 @@ from backend.app.api.router import v1
 from backend.database.db import engine, Base
 from backend.core.conf import settings
 from backend.core.logger import setup_logging
+from backend.core.middleware import BilibiliUserInfoMiddleware
+from backend.common.exception.handler import register_exception_handler
 
 # 设置日志
 setup_logging()
@@ -18,6 +20,9 @@ app = FastAPI(
     redoc_url=settings.FASTAPI_REDOC_URL,
     openapi_url=settings.FASTAPI_OPENAPI_URL,
 )
+
+# 注册全局异常处理器
+register_exception_handler(app)
 
 @app.middleware("http")
 async def request_id_middleware(request: Request, call_next):
@@ -36,6 +41,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=settings.CORS_EXPOSE_HEADERS,
 )
+
+# 注册自定义中间件
+app.add_middleware(BilibiliUserInfoMiddleware)
 
 # 注册路由
 app.include_router(v1, prefix=settings.API_V1_PATH)

@@ -1,19 +1,20 @@
 # -*- coding: utf-8 -*-
 import asyncio
 from loguru import logger
+import aiohttp
+import json
+from typing import Dict, Set, Optional, Union
+from fastapi import WebSocket
+
 # 使用本地 blivedm
 from backend.blivedm import blivedm
 from backend.blivedm.blivedm.models import web as web_models
-from typing import Dict, List, Set, Optional, Union
-from fastapi import WebSocket
 from backend.app.schemas import danmaku as dm_schema
-from backend.app.schemas import user as user_schema
 from backend.app.schemas import room as room_schema
 from backend.app.crud.danmaku import crud_danmaku
-from backend.app.crud.user import crud_user
+from backend.app.crud.auth import crud_auth
 from backend.app.crud.room import crud_room
 from backend.database.db import AsyncSessionLocal
-import aiohttp
 from backend.core.conf import settings
 
 # 身份映射
@@ -24,14 +25,19 @@ PRIVILEGE_MAP = {
     3: "舰长"
 }
 
-import json
-
 class BilibiliHandler(blivedm.BaseHandler):
+    """
+    Bilibili 直播弹幕消息处理器
+    负责处理收到的弹幕、礼物、SC 等消息，将其转换为内部 Schema 并广播/存储
+    """
     def __init__(self, room_id: int, service: 'BLiveService'):
         self.room_id = room_id
         self.service = service
 
     def _on_danmaku(self, client: blivedm.BLiveClient, message: web_models.DanmakuMessage):
+        """
+        处理普通弹幕消息
+        """
         privilege_name = PRIVILEGE_MAP.get(message.privilege_type, "普通")
         identity = "房管" if message.admin else ("主播" if message.privilege_type == 1 else "普通")
 
@@ -51,6 +57,9 @@ class BilibiliHandler(blivedm.BaseHandler):
 
 
     def _on_super_chat(self, client: blivedm.BLiveClient, message: web_models.SuperChatMessage):
+        """
+        处理 Super Chat (醒目留言) 消息
+        """
         privilege_name = PRIVILEGE_MAP.get(message.privilege_type, "普通")
         identity = "房管" if message.admin else ("主播" if message.privilege_type == 1 else "普通")
 
@@ -69,12 +78,11 @@ class BilibiliHandler(blivedm.BaseHandler):
         asyncio.create_task(self._save_super_chat(message))
 
     def _on_gift(self, client: blivedm.BLiveClient, message: web_models.GiftMessage):
-        currency = "银瓜子"
+        """
+        处理礼物消息
+        """
         price = float(message.total_coin)/1000.0
-        if message.coin_type == 'gold':
-            currency = "金瓜子"
-            pass
-
+        
         resp = dm_schema.GiftResponse(
             user_name=message.uname,
             level=message.medal_level if message.medal_level else 0,
@@ -89,6 +97,9 @@ class BilibiliHandler(blivedm.BaseHandler):
         asyncio.create_task(self._save_gift(message))
 
     def _on_buy_guard(self, client: blivedm.BLiveClient, message: web_models.GuardBuyMessage):
+        """
+        处理上舰（购买舰长）消息
+        """
         guard_name = PRIVILEGE_MAP.get(message.guard_level, "舰队")
         price=float(message.price) / 1000.0
         resp = dm_schema.GiftResponse(
@@ -105,6 +116,9 @@ class BilibiliHandler(blivedm.BaseHandler):
         asyncio.create_task(self._save_guard(message, guard_name))
 
     def _on_user_toast_v2(self, client: blivedm.BLiveClient, message: web_models.UserToastV2Message):
+        """
+        处理续费舰长消息
+        """
         guard_name = PRIVILEGE_MAP.get(message.guard_level, "舰队")
         price=float(message.price) / 1000.0
         resp = dm_schema.GiftResponse(
@@ -121,6 +135,7 @@ class BilibiliHandler(blivedm.BaseHandler):
         asyncio.create_task(self._save_guard(message, guard_name))
 
     async def _save_danmaku(self, message, privilege_name, identity):
+        """保存弹幕到数据库"""
         async with AsyncSessionLocal() as db:
             try:
                 data = dm_schema.DanmakuCreate(
@@ -140,6 +155,7 @@ class BilibiliHandler(blivedm.BaseHandler):
                 logger.error(f"保存弹幕失败: {e}")
 
     async def _save_super_chat(self, message):
+        """保存 SC 到数据库"""
         async with AsyncSessionLocal() as db:
             try:
                 data = dm_schema.SuperChatCreate(
@@ -147,8 +163,8 @@ class BilibiliHandler(blivedm.BaseHandler):
                     user_name=message.uname,
                     uid=str(message.uid),
                     level=message.medal_level if message.medal_level else 0,
-                    privilege_name="普通", # SC doesn't always carry guard info easily, defaulting
-                    identity="普通", # Defaulting
+                    privilege_name="普通", 
+                    identity="普通", 
                     face_img=message.face,
                     sc_text=message.message,
                     price=message.price
@@ -160,6 +176,7 @@ class BilibiliHandler(blivedm.BaseHandler):
                 logger.error(f"保存sc失败: {e}")
 
     async def _save_gift(self, message):
+        """保存礼物到数据库"""
         async with AsyncSessionLocal() as db:
             try:
                 data = dm_schema.GiftCreate(
@@ -167,7 +184,7 @@ class BilibiliHandler(blivedm.BaseHandler):
                     user_name=message.uname,
                     uid=str(message.uid),
                     level=message.medal_level if message.medal_level else 0,
-                    privilege_name="普通", # Gift message might not have guard info
+                    privilege_name="普通",
                     identity="普通",
                     face_img=message.face,
                     gift_name=message.gift_name,
@@ -181,6 +198,7 @@ class BilibiliHandler(blivedm.BaseHandler):
                 logger.error(f"保存礼物失败: {e}")
 
     async def _save_guard(self, message, privilege_name):
+        """保存舰队信息到数据库"""
         async with AsyncSessionLocal() as db:
             try:
                 level = 0
@@ -209,6 +227,10 @@ class BilibiliHandler(blivedm.BaseHandler):
                 logger.error(f"保存舰队失败: {e}")
 
 class BLiveService:
+    """
+    Bilibili 直播服务管理器
+    负责管理 WebSocket 连接、直播间监听客户端和房间信息
+    """
     def __init__(self):
         # room_id -> BLiveClient
         self.clients: Dict[int, blivedm.BLiveClient] = {}
@@ -219,27 +241,34 @@ class BLiveService:
         self.connections: Dict[int, Set[WebSocket]] = {}
 
     async def start_listen(self, room_id: int, user_name: Optional[str] = None):
+        """
+        开始监听指定直播间
+        
+        Args:
+            room_id (int): 直播间 ID
+            user_name (Optional[str]): 关联的用户名 (用于获取 SESSDATA)
+        """
         if room_id in self.clients:
-            print(f"Already listening to room {room_id}")
+            logger.info(f"已在监听房间 {room_id}")
             return
 
-        print(f"Starting listen for room {room_id}")
+        logger.info(f"开始监听房间 {room_id}")
         
         sessdata = None
         if user_name:
             async with AsyncSessionLocal() as db:
-                user = await crud_user.get_user_by_name(db, user_name)
-                if user:
-                    sessdata = user.sessdata
-                    print(f"Found SESSDATA for user {user_name}")
+                auth = await crud_auth.get_user_by_name(db, user_name)
+                if auth:
+                    sessdata = auth.sessdata
+                    logger.info(f"为用户 {user_name} 找到 SESSDATA")
                 else:
-                    print(f"User {user_name} not found in DB")
+                    logger.warning(f"用户 {user_name} 不存在于数据库中")
 
         # 如果提供了 SESSDATA，则创建 session
         session: Optional[aiohttp.ClientSession] = None
         if sessdata:
             cookies = {'SESSDATA': sessdata}
-            session = aiohttp.ClientSession(cookies=cookies, headers={'User-Agent': settings.USER_AGENT})
+            session = aiohttp.ClientSession(cookies=cookies, headers={'User-Agent': settings.HEADERS['User-Agent']})
             self.sessions[room_id] = session
             
         client = blivedm.BLiveClient(room_id, session=session)
@@ -252,11 +281,14 @@ class BLiveService:
         asyncio.create_task(self._fetch_and_save_room_info(room_id, session))
 
     async def _fetch_and_save_room_info(self, room_id: int, session: Optional[aiohttp.ClientSession] = None):
+        """
+        获取并保存房间信息到数据库
+        """
         url = f"{settings.BILIBILI_API_ROOM_INFO}?room_id={room_id}"
         
         own_session = False
         if session is None:
-            session = aiohttp.ClientSession(headers={'User-Agent': settings.USER_AGENT})
+            session = aiohttp.ClientSession(headers={'User-Agent': settings.HEADERS['User-Agent']})
             own_session = True
             
         try:
@@ -278,17 +310,20 @@ class BLiveService:
                             )
                             await crud_room.create_or_update_room(db, room_data)
                             await db.commit()
-                            print(f"Room info saved: {title}, Host: {host_name}")
+                            logger.info(f"保存房间信息: {title}, 主播: {host_name}")
                         except Exception as e:
                             await db.rollback()
-                            print(f"Failed to save room info: {e}")
+                            logger.error(f"保存房间信息失败: {e}")
         except Exception as e:
-            print(f"Failed to fetch room info: {e}")
+            logger.error(f"获取房间信息失败: {e}")
         finally:
             if own_session:
                 await session.close()
 
     async def _fetch_user_name_by_uid(self, uid: int, session: aiohttp.ClientSession) -> str:
+        """
+        通过 UID 获取用户名称
+        """
         # 使用直播用户接口，比主站用户接口风控更低
         url = f"{settings.BILIBILI_API_LIVE_USER_INFO}?uid={uid}"
         try:
@@ -297,36 +332,15 @@ class BLiveService:
                 if data['code'] == 0:
                     return data['data']['info']['uname']
         except Exception as e:
-            print(f"Failed to fetch host name: {e}")
+            logger.error(f"获取主播名称失败: {e}")
         return ""
-
-    async def _fetch_and_save_user_info(self, sessdata: str):
-        url = settings.BILIBILI_API_USER_INFO
-        cookies = {'SESSDATA': sessdata}
-        async with aiohttp.ClientSession(cookies=cookies, headers={'User-Agent': settings.USER_AGENT}) as session:
-            try:
-                async with session.get(url) as resp:
-                    data = await resp.json()
-                    if data['code'] == 0:
-                        uname = data['data']['uname']
-                        async with AsyncSessionLocal() as db:
-                            try:
-                                user_data = schemas.UserCreate(
-                                    user_name=uname,
-                                    sessdata=sessdata
-                                )
-                                await crud_dao.create_user(db, user_data)
-                                await db.commit()
-                                print(f"User info saved: {uname}")
-                            except Exception as e:
-                                await db.rollback()
-                                print(f"Failed to save user info: {e}")
-            except Exception as e:
-                print(f"Failed to fetch user info: {e}")
 
     async def stop_listen(self, room_id: int):
         """
-        停止监听
+        停止监听指定直播间，清理资源
+        
+        Args:
+            room_id (int): 直播间 ID
         """
         if room_id in self.clients:
             await self.clients[room_id].stop_and_close()
@@ -339,7 +353,12 @@ class BLiveService:
 
     async def connect(self, websocket: WebSocket, room_id: int, user_name: Optional[str] = None):
         """
-        建立 WebSocket 连接并启动监听
+        建立 WebSocket 连接并自动启动监听
+        
+        Args:
+            websocket (WebSocket): WebSocket 连接对象
+            room_id (int): 直播间 ID
+            user_name (Optional[str]): 关联用户名
         """
         await websocket.accept()
         if room_id not in self.connections:
@@ -351,6 +370,10 @@ class BLiveService:
     def disconnect(self, websocket: WebSocket, room_id: int):
         """
         断开 WebSocket 连接
+        
+        Args:
+            websocket (WebSocket): WebSocket 连接对象
+            room_id (int): 直播间 ID
         """
         if room_id in self.connections:
             if websocket in self.connections[room_id]:
@@ -358,16 +381,19 @@ class BLiveService:
 
     async def broadcast(self, room_id: int, data: Union[dm_schema.DanmakuResponse, dm_schema.GiftResponse]):
         """
-        广播消息到所有连接
+        广播消息到该房间的所有 WebSocket 连接
+        
+        Args:
+            room_id (int): 直播间 ID
+            data: 消息数据对象
         """
-        # print(f"Broadcasting to {room_id}, active connections: {len(self.connections.get(room_id, []))}")
         if room_id in self.connections:
             for connection in list(self.connections[room_id]):
                 try:
                     await connection.send_json(data.model_dump())
                 except Exception as e:
-                    print(f"Broadcast error: {e}")
+                    logger.error(f"广播消息到房间 {room_id} 失败: {e}")
                     self.disconnect(connection, room_id)
 
 # 全局单例
-blive_service = BLiveService()
+blive_service : BLiveService = BLiveService()
