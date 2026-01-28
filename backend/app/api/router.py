@@ -1,11 +1,15 @@
 # -*- coding: utf-8 -*-
 from fastapi import APIRouter
-from backend.app.api.v1 import dm
+from backend.app.api.v1.listener import router as listener_router
+from backend.app.api.v1.user import router as user_router
+from backend.app.api.v1.gift import router as gift_router
+
+from backend.core.conf import settings
 
 # 创建顶层路由器
-api_router = APIRouter()
+v1 = APIRouter(prefix=settings.API_V1_PATH)
 
 # 注册 v1 版本的路由模块
-# 可以在这里聚合多个模块的路由，例如:
-# api_router.include_router(users.router, prefix="/users", tags=["users"])
-api_router.include_router(dm.router, tags=["哔哩哔哩弹幕接口"])
+v1.include_router(user_router)
+v1.include_router(listener_router)
+v1.include_router(gift_router)

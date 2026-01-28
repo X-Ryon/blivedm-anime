@@ -40,9 +40,12 @@ venv.bak/
 # Project Specific
 config.txt
 config.json
+debug_tools/
 *.log
 logs/
 data/
+tests/
+test*
 *.db
 *.sqlite3
 

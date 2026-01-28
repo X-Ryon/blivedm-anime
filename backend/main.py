@@ -3,7 +3,7 @@ import uuid
 from fastapi import FastAPI, Request
 from loguru import logger
 from fastapi.middleware.cors import CORSMiddleware
-from backend.app.api.router import api_router
+from backend.app.api.router import v1
 from backend.database.db import engine, Base
 from backend.core.conf import settings
 from backend.core.logger import setup_logging
@@ -38,7 +38,7 @@ app.add_middleware(
 )
 
 # 注册路由
-app.include_router(api_router, prefix=settings.API_V1_PATH)
+app.include_router(v1, prefix=settings.API_V1_PATH)
 
 @app.on_event("startup")
 async def startup():
