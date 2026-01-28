@@ -50,6 +50,7 @@ test*
 *.db
 *.sqlite3
 tmp_test/
+frontend_design_spec.md
 
 # OS
 .DS_Store
