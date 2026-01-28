@@ -2,7 +2,7 @@ from fastapi import APIRouter
 from backend.app.services.gift_service import gift_service
 from backend.app.schemas import danmaku as dm_schema
 
-router = APIRouter(prefix="/gift", tags=["直播礼物接口"])
+router = APIRouter()
 
 @router.post("/gift-info-room", response_model=dm_schema.FetchGiftInfoResponse)
 async def fetch_gift_info_room(request: dm_schema.FetchGiftInfoRequest):

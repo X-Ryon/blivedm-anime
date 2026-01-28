@@ -1,12 +1,9 @@
 {
   "system": {
     "auto_login": true,
-    "last_sessdata": "",
+    "last_uid": "",
     "auto_connect": false,
     "last_room_id": ""
-  },
-  "display": {
-    "history_range": 7
   },
   "resources": {
     "gift_animations": [],

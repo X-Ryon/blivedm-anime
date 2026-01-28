@@ -46,10 +46,22 @@ app.add_middleware(
 app.add_middleware(BilibiliUserInfoMiddleware)
 
 # 注册路由
-app.include_router(v1, prefix=settings.API_V1_PATH)
+app.include_router(v1)
 
 @app.on_event("startup")
 async def startup():
+    # 检查并创建 static/asset 目录
+    import os
+    from pathlib import Path
+    
+    # 假设 static 目录在项目根目录下
+    base_dir = Path(__file__).resolve().parent.parent
+    asset_dir = base_dir / "static" / "asset"
+    
+    if not asset_dir.exists():
+        logger.info(f"Creating asset directory: {asset_dir}")
+        asset_dir.mkdir(parents=True, exist_ok=True)
+
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 

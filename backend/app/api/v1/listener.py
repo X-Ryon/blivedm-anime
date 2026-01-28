@@ -4,7 +4,7 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect, BackgroundTasks, 
 from backend.app.services.blive_service import blive_service
 from backend.app.schemas.room import ListenRequest, StartListenResponse, StopListenResponse
 
-router = APIRouter(prefix="/listener", tags=["直播弹幕接口"])
+router = APIRouter()
 
 # ----------------- WebSocket 接口 -----------------
 

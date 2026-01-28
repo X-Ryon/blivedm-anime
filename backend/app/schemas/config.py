@@ -3,16 +3,14 @@ from pydantic import BaseModel, Field
 
 class SystemConfig(BaseModel):
     auto_login: bool = False
-    last_sessdata: str = ""
+    last_uid: str = ""
     auto_connect: bool = False
     last_room_id: str = ""
-
-class DisplayConfig(BaseModel):
-    history_range: int = 7
 
 class GiftAnimation(BaseModel):
     gift_id: int
     gift_name: str
+    gift_img: str
     animation_path: str
 
 class GuardSkins(BaseModel):
@@ -27,5 +25,4 @@ class ResourcesConfig(BaseModel):
 
 class AppConfig(BaseModel):
     system: SystemConfig = Field(default_factory=SystemConfig)
-    display: DisplayConfig = Field(default_factory=DisplayConfig)
     resources: ResourcesConfig = Field(default_factory=ResourcesConfig)

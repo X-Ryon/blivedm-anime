@@ -12,3 +12,11 @@ async def get_system_config():
     """
     config = config_service.get_config()
     return Resp.success(data=config)
+
+@router.post("/config", response_model=Resp[AppConfig])
+async def update_system_config(config: AppConfig):
+    """
+    更新系统配置
+    """
+    updated_config = config_service.update_config(config)
+    return Resp.success(data=updated_config)
