@@ -7,5 +7,10 @@ uvicorn
 sqlalchemy
 aiosqlite
 pydantic
+pydantic-settings
 greenlet
 pure-protobuf
+loguru
+tzdata
+qrcode
+pillow

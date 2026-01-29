@@ -1,8 +1,15 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { Avatar, Tag, Typography, Space } from 'antd';
 import { UserOutlined } from '@ant-design/icons';
+import useDanmakuStore from '../../../store/useDanmakuStore';
+import api from '../../../services/api';
 
 const { Text } = Typography;
+
+const getAvatarUrl = (url) => {
+  if (!url) return null;
+  return `${api.defaults.baseURL}/proxy/image?url=${encodeURIComponent(url)}`;
+};
 
 const ScItem = ({ data }) => {
   const { username, content, avatar, level, time, price } = data;
@@ -14,11 +21,11 @@ const ScItem = ({ data }) => {
       alignItems: 'flex-start',
       padding: '0 8px'
     }}>
-      <Avatar icon={<UserOutlined />} src={avatar} size="small" style={{ marginTop: 4, flexShrink: 0 }} />
+      <Avatar icon={<UserOutlined />} src={getAvatarUrl(avatar)} size="small" style={{ marginTop: 4, flexShrink: 0 }} />
       <div style={{ marginLeft: 12, maxWidth: 'calc(100% - 44px)' }}>
         <Space size={4} style={{ marginBottom: 2, display: 'flex', alignItems: 'center' }}>
           <Text type="secondary" style={{ fontSize: 12 }}>{username}</Text>
-          <Tag color="gold" style={{ fontSize: 10, lineHeight: '16px', height: 18, padding: '0 4px', margin: 0 }}>UL {level}</Tag>
+          <Tag color="gold" style={{ fontSize: 10, lineHeight: '16px', height: 18, padding: '0 4px', margin: 0 }}>Lv {level}</Tag>
           <Text type="secondary" style={{ fontSize: 10 }}>{time}</Text>
         </Space>
         <div style={{ 
@@ -39,46 +46,15 @@ const ScItem = ({ data }) => {
 
 const ScList = () => {
     const listRef = useRef(null);
-    const [mockData, setMockData] = useState(() => {
-        return Array.from({ length: 20 }, (_, i) => ({
-            id: i + 1,
-            username: `RichUser_${i + 1}`,
-            content: `主播好棒！支持一下！(第 ${i + 1} 条 SC)`,
-            avatar: '',
-            level: Math.floor(Math.random() * 20) + 10,
-            price: (i + 1) * 30,
-            time: `12:${30 + i}:01`
-        }));
-    });
+    const { scList } = useDanmakuStore();
     const [autoScroll, setAutoScroll] = useState(true);
-
-    // 模拟新数据流入
-    useEffect(() => {
-        const timer = setInterval(() => {
-            setMockData(prev => {
-                const nextId = prev.length > 0 ? prev[prev.length - 1].id + 1 : 1;
-                const newItem = {
-                    id: nextId,
-                    username: `NewRichUser_${nextId}`,
-                    content: `主播好棒！(第 ${nextId} 条 SC)`,
-                    avatar: '',
-                    level: 20,
-                    price: 100,
-                    time: new Date().toLocaleTimeString()
-                };
-                return [...prev, newItem];
-            });
-        }, 5000); // 每5秒添加一条
-
-        return () => clearInterval(timer);
-    }, []);
 
     // 滚动处理
     useEffect(() => {
         if (listRef.current && autoScroll) {
             listRef.current.scrollTop = listRef.current.scrollHeight;
         }
-    }, [mockData, autoScroll]);
+    }, [scList, autoScroll]);
 
     // 监听用户手动滚动
     const handleScroll = () => {
@@ -101,14 +77,14 @@ const ScList = () => {
         overflow: 'hidden'
     }}>
       <div style={{ padding: '12px 16px', borderBottom: '1px solid #f0f0f0', fontWeight: 'bold', backgroundColor: '#fafafa' }}>
-        SuperChat
+        醒目留言 (SC)
       </div>
       <div 
         ref={listRef}
         onScroll={handleScroll}
-        style={{ flex: 1, overflowY: 'auto', padding: '12px 0' }}
+        style={{ flex: 1, overflowY: 'auto', padding: '12px' }}
       >
-        {mockData.map(item => <ScItem key={item.id} data={item} />)}
+        {scList.map(item => <ScItem key={item.id} data={item} />)}
       </div>
     </div>
   );

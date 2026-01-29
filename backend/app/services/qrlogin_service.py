@@ -56,24 +56,37 @@ class QrLoginService:
                 logger.error(f"创建目录失败: {save_dir}, error: {e}")
                 return None
         
-        # 使用第三方 API 生成二维码 (避免引入本地图形库依赖)
-        params = {"size": "300x300", "data": url}
-        async with aiohttp.ClientSession() as session:
-            try:
-                async with session.get(settings.QR_API_URL, params=params) as response:
-                    if response.status == 200:
-                        content = await response.read()
-                        # 使用简单的文件名生成策略，避免冲突
-                        filename = f"bili_qr_{int(os.times().elapsed)}.png"
-                        filepath = os.path.join(save_dir, filename)
-                        with open(filepath, "wb") as f:
-                            f.write(content)
-                        return os.path.abspath(filepath)
-                    logger.error(f"生成二维码图片失败, status: {response.status}")
-                    return None
-            except Exception as e:
-                logger.error(f"生成二维码图片异常: {e}")
-                return None
+        try:
+            # 使用 qrcode 库本地生成二维码
+            import qrcode
+            import time
+            import asyncio
+            from functools import partial
+
+            # 在 executor 中运行以避免阻塞事件循环
+            loop = asyncio.get_running_loop()
+            
+            def _generate():
+                qr = qrcode.QRCode(
+                    version=1,
+                    error_correction=qrcode.constants.ERROR_CORRECT_L,
+                    box_size=10,
+                    border=4,
+                )
+                qr.add_data(url)
+                qr.make(fit=True)
+                img = qr.make_image(fill_color="black", back_color="white")
+                
+                filename = f"bili_qr_{int(time.time())}.png"
+                filepath = os.path.join(save_dir, filename)
+                img.save(filepath)
+                return os.path.abspath(filepath)
+
+            return await loop.run_in_executor(None, _generate)
+
+        except Exception as e:
+            logger.error(f"生成二维码图片异常: {e}")
+            return None
 
     @classmethod
     async def poll_status(cls, qrcode_key: str) -> Dict[str, Any]:

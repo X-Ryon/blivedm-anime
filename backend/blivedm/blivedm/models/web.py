@@ -313,6 +313,10 @@ class GiftMessage:
     """勋章房间ID，未登录时是0"""
     medal_ruid: int = 0
     """勋章主播ID"""
+    blind_gift: Optional[dict] = None
+    """盲盒信息"""
+    r_price: int = 0
+    """实际价值(1000 = 1元 = 10电池),盲盒:爆出道具的价值"""
 
     @classmethod
     def from_command(cls, data: dict):
@@ -327,6 +331,12 @@ class GiftMessage:
             medal_name = ''
             medal_room_id = 0
             medal_ruid = 0
+
+        r_price = data.get('r_price', 0)
+        blind_gift = data.get('blind_gift')
+        if r_price == 0 and isinstance(blind_gift, dict):
+            # 尝试从 blind_gift 中获取价格，字段名可能是 gift_tip_price
+            r_price = blind_gift.get('gift_tip_price', 0)
 
         return cls(
             gift_name=data['giftName'],
@@ -349,6 +359,8 @@ class GiftMessage:
             medal_name=medal_name,
             medal_room_id=medal_room_id,
             medal_ruid=medal_ruid,
+            blind_gift=blind_gift,
+            r_price=r_price,
         )
 
 

@@ -5,7 +5,7 @@ import { UpOutlined, DownOutlined, PlayCircleOutlined } from '@ant-design/icons'
 const PreviewArea = ({ expanded, onToggle }) => {
   return (
     <div style={{ 
-      height: expanded ? 400 : 50, 
+      height: expanded ? 300 : 50, 
       transition: 'height 0.3s cubic-bezier(0.4, 0, 0.2, 1)', 
       background: '#fff', 
       borderTop: '1px solid #f0f0f0',

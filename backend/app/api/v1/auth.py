@@ -1,5 +1,6 @@
 from loguru import logger
 import os
+from typing import List
 from fastapi import APIRouter, Query
 
 
@@ -31,22 +32,25 @@ async def get_login_qrcode():
     
     if not img_path:
         raise InternalServerException(message="生成二维码图片失败")
-        
-    logger.info(f"二维码已生成: {img_path}")
+
+    # 构建相对路径供前端访问
+    relative_path = f"/static/qrcode/{os.path.basename(img_path)}"
     
     return Resp.success(data={
+        "url": url,
         "qrcode_key": key,
-        "image_path": img_path,
-        "url": url
+        "img_path": relative_path
     })
 
-@router.get("/auth/poll", summary="轮询扫码登录状态", response_model=Resp)
-async def poll_login_status(qrcode_key: str):
+@router.get("/auth/poll", summary="轮询二维码登录状态", response_model=Resp)
+async def poll_login_status(qrcode_key: str = Query(..., description="二维码Key")):
     """
     轮询登录状态
-    - 如果登录成功，自动获取用户信息并入库
     """
     result = await qrlogin_service.poll_status(qrcode_key)
+    if not result:
+        raise InternalServerException(message="获取状态失败")
+        
     data = result.get("data", {})
     cookies = result.get("cookies", {})
     
@@ -100,7 +104,23 @@ async def poll_login_status(qrcode_key: str):
     elif code == 86038:
         return Resp.success(data={"status": "expired", "message": "二维码已过期"})
     else:
-        return Resp.success(data={"status": "error", "message": data.get("message", "未知错误")})
+        return Resp.error(code=code, message=data.get("data", {}).get("message", "未知错误"))
+
+@router.get("/auth/user/{uid}", summary="根据UID获取用户信息", response_model=Resp)
+async def get_user_by_uid(uid: str):
+    """
+    根据UID获取用户信息，用于自动登录
+    """
+    user = await auth_service.get_user_by_uid(uid)
+    if not user:
+        raise NotFoundException(message="用户不存在")
+        
+    return Resp.success(data={
+        "uid": user.uid,
+        "user_name": user.user_name,
+        "face_img": user.face_img,
+        "sessdata": user.sessdata
+    })
 
 
 @router.post("/users", response_model=Resp[UserInfo])
@@ -140,3 +160,31 @@ async def delete_user(user_name: str = Query(..., description="要删除的用�
         "success": success,
         "message": f"用户 {user_name} 删除成功"
     })
+
+@router.get("/users/list", response_model=Resp[List[UserInfo]])
+async def get_user_list():
+    """
+    获取所有已保存的用户列表
+    """
+    users = await auth_service.get_all_users()
+    # Convert to schema
+    user_list = [
+        UserInfo(
+            uid=user.uid,
+            user_name=user.user_name,
+            face_img=user.face_img,
+            sessdata=user.sessdata
+        ) for user in users
+    ]
+    return Resp.success(data=user_list)
+
+@router.delete("/users/{uid}", response_model=Resp)
+async def delete_user_by_uid(uid: str):
+    """
+    根据UID删除用户
+    """
+    success = await auth_service.delete_user_by_uid(uid)
+    if success:
+        return Resp.success(message=f"用户UID {uid} 已删除")
+    else:
+        raise NotFoundException(message="用户不存在")

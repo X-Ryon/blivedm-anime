@@ -86,6 +86,17 @@ class BilibiliHandler(blivedm.BaseHandler):
         """
         price = float(message.total_coin)/1000.0
         
+        # 修正盲盒礼物价格：盲盒礼物应显示实际获得物品的价值，而非盲盒本身的价格
+        # 如果是盲盒礼物 (blind_gift 不为 None)
+        if message.blind_gift is not None:
+            # 优先使用 r_price (实际价值)，open_live 文档指出盲盒时这是爆出道具的价值
+            # web 协议中可能在 blind_gift.gift_tip_price
+            if message.r_price > 0:
+                price = float(message.r_price) * message.num / 1000.0
+            # 其次尝试使用 price (礼物单价)，open_live 文档指出盲盒时这也是爆出道具的价值
+            elif message.price > 0:
+                price = float(message.price) * message.num / 1000.0
+        
         resp = dm_schema.GiftResponse(
             user_name=message.uname,
             level=message.medal_level if message.medal_level else 0,
@@ -97,7 +108,7 @@ class BilibiliHandler(blivedm.BaseHandler):
         )
         logger.info(f"[礼物]房间:{self.room_id}，用户名:{message.uname}，gift: {message.gift_name}，数量:{message.num}，单价:{price}元")
         asyncio.create_task(self.service.broadcast(self.room_id, resp))
-        asyncio.create_task(self._save_gift(message))
+        asyncio.create_task(self._save_gift(message, price))
 
     def _on_buy_guard(self, client: blivedm.BLiveClient, message: web_models.GuardBuyMessage):
         """
@@ -179,7 +190,7 @@ class BilibiliHandler(blivedm.BaseHandler):
                 await db.rollback()
                 logger.error(f"保存sc失败: {e}")
 
-    async def _save_gift(self, message):
+    async def _save_gift(self, message, price: float):
         """保存礼物到数据库"""
         async with AsyncSessionLocal() as db:
             try:
@@ -193,7 +204,7 @@ class BilibiliHandler(blivedm.BaseHandler):
                     face_img=message.face,
                     gift_name=message.gift_name,
                     gift_num=message.num,
-                    price=float(message.total_coin)/1000.0
+                    price=price
                 )
                 await crud_danmaku.create_gift(db, data)
                 await db.commit()
@@ -243,36 +254,58 @@ class BLiveService:
         
         # room_id -> List[WebSocket] (Unified connection list)
         self.connections: Dict[int, Set[WebSocket]] = {}
+        
+        # 当前正在监听的房间 ID (单例模式)
+        self.current_room_id: Optional[int] = None
 
-    async def start_listen(self, room_id: int, user_name: Optional[str] = None):
+    async def start_listen(self, room_id: int, user_name: Optional[str] = None, sessdata: Optional[str] = None):
         """
-        开始监听指定直播间
+        开始监听指定直播间 (单例模式：自动停止旧房间)
         
         Args:
             room_id (int): 直播间 ID
-            user_name (Optional[str]): 关联的用户名 (用于获取 SESSDATA)
+            user_name (Optional[str]): 关联的用户名 (用于获取 SESSDATA) [DEPRECATED]
+            sessdata (Optional[str]): 直接提供的 SESSDATA
         """
-        if room_id in self.clients:
+        # 如果请求的房间已经是当前正在监听的房间，且客户端已启动，则直接返回
+        if self.current_room_id == room_id and room_id in self.clients:
             logger.info(f"已在监听房间 {room_id}")
             return
 
+        # 如果有其他房间正在监听，先停止它
+        if self.current_room_id and self.current_room_id != room_id:
+            logger.info(f"切换监听房间：停止旧房间 {self.current_room_id}")
+            await self.stop_listen(self.current_room_id)
+            
+        self.current_room_id = room_id
         logger.info(f"开始监听房间 {room_id}")
         
-        sessdata = None
-        if user_name:
+        final_sessdata = sessdata
+        # 兼容旧逻辑，如果有 user_name 但没有 sessdata，尝试从数据库获取
+        if not final_sessdata and user_name:
             async with AsyncSessionLocal() as db:
                 auth = await crud_auth.get_user_by_name(db, user_name)
                 if auth:
-                    sessdata = auth.sessdata
+                    final_sessdata = auth.sessdata
                     logger.info(f"为用户 {user_name} 找到 SESSDATA")
                 else:
                     logger.warning(f"用户 {user_name} 不存在于数据库中")
 
         # 如果提供了 SESSDATA，则创建 session
         session: Optional[aiohttp.ClientSession] = None
-        if sessdata:
-            cookies = {'SESSDATA': sessdata}
-            session = aiohttp.ClientSession(cookies=cookies, headers={'User-Agent': settings.HEADERS['User-Agent']})
+        if final_sessdata:
+            # Explicitly set cookie with domain to ensure it's used correctly
+            cookie_jar = aiohttp.CookieJar()
+            cookie_jar.update_cookies({'SESSDATA': final_sessdata})
+            # Note: We don't strictly set domain here because aiohttp's default behavior 
+            # for dict-based cookies is to share them. But if blivedm is strict, 
+            # we rely on it finding the cookie.
+            
+            # Log masked sessdata for debugging
+            masked_sessdata = final_sessdata[:5] + "***" + final_sessdata[-5:] if len(final_sessdata) > 10 else "***"
+            logger.info(f"Using SESSDATA: {masked_sessdata}")
+
+            session = aiohttp.ClientSession(cookie_jar=cookie_jar, headers={'User-Agent': settings.HEADERS['User-Agent']})
             self.sessions[room_id] = session
             
         client = blivedm.BLiveClient(room_id, session=session)
@@ -281,16 +314,20 @@ class BLiveService:
         self.clients[room_id] = client
         client.start()
         
-        # 异步获取并保存房间信息
-        asyncio.create_task(self._fetch_and_save_room_info(room_id, session))
+        # 获取并保存房间信息
+        title = await self._fetch_and_save_room_info(room_id, session)
+        return title
 
-    async def _fetch_and_save_room_info(self, room_id: int, session: Optional[aiohttp.ClientSession] = None):
+    async def _fetch_and_save_room_info(self, room_id: int, session: Optional[aiohttp.ClientSession] = None) -> Optional[str]:
         """
         获取并保存房间信息到数据库
+        Returns:
+            str: 房间标题
         """
         url = f"{settings.BILIBILI_API_ROOM_INFO}?room_id={room_id}"
         
         own_session = False
+        title = None
         if session is None:
             session = aiohttp.ClientSession(headers={'User-Agent': settings.HEADERS['User-Agent']})
             own_session = True
@@ -323,6 +360,8 @@ class BLiveService:
         finally:
             if own_session:
                 await session.close()
+        
+        return title
 
     async def _fetch_user_name_by_uid(self, uid: int, session: aiohttp.ClientSession) -> str:
         """
@@ -354,6 +393,9 @@ class BLiveService:
         if room_id in self.sessions:
             await self.sessions[room_id].close()
             del self.sessions[room_id]
+            
+        if self.current_room_id == room_id:
+            self.current_room_id = None
 
     async def connect(self, websocket: WebSocket, room_id: int, user_name: Optional[str] = None):
         """

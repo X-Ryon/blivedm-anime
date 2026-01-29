@@ -3,6 +3,7 @@ import uuid
 from fastapi import FastAPI, Request
 from loguru import logger
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from backend.app.api.router import v1
 from backend.database.db import engine, Base
 from backend.core.conf import settings
@@ -47,6 +48,13 @@ app.add_middleware(BilibiliUserInfoMiddleware)
 
 # 注册路由
 app.include_router(v1)
+
+# 挂载静态文件
+import os
+static_dir = os.path.join(os.getcwd(), "static")
+if not os.path.exists(static_dir):
+    os.makedirs(static_dir)
+app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
 @app.on_event("startup")
 async def startup():

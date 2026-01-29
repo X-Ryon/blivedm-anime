@@ -63,4 +63,23 @@ class CRUDAuth:
             return True
         return False
 
+    async def delete_user_by_uid(self, db: AsyncSession, uid: str) -> bool:
+        """
+        根据UID删除用户
+        """
+        result = await db.execute(select(Auth_model).filter(Auth_model.uid == uid))
+        db_user = result.scalars().first()
+        if db_user:
+            await db.delete(db_user)
+            await db.flush()
+            return True
+        return False
+
+    async def get_all_users(self, db: AsyncSession):
+        """
+        获取所有用户
+        """
+        result = await db.execute(select(Auth_model))
+        return result.scalars().all()
+
 crud_auth = CRUDAuth()

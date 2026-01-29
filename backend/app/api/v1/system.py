@@ -20,3 +20,11 @@ async def update_system_config(config: AppConfig):
     """
     updated_config = config_service.update_config(config)
     return Resp.success(data=updated_config)
+
+@router.post("/config/reset", response_model=Resp[AppConfig])
+async def reset_system_config():
+    """
+    恢复默认配置
+    """
+    reset_config = config_service.reset_config()
+    return Resp.success(data=reset_config)
