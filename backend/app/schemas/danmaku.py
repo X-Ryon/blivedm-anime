@@ -13,6 +13,8 @@ class DanmakuResponse(BaseModel):
     dm_text: str = Field(..., max_length=255, description="弹幕内容")
     identity: str = Field(..., max_length=64, description="直播间身份：主播、房管、普通")
     price: float = Field(default=0.0, description="SC金额，普通弹幕为0")
+    uid: Optional[str] = Field(default=None, description="用户UID")
+    face_img: Optional[str] = Field(default=None, description="用户头像")
     msg_type: str = Field(default="danmaku", description="消息类型: danmaku, super_chat")
 
 class GiftResponse(BaseModel):
@@ -25,6 +27,8 @@ class GiftResponse(BaseModel):
     gift_type: str = Field(..., max_length=255, description="礼物名称或上舰类型")
     num: int = Field(default=0, description="礼物数量")
     price: float = Field(default=0.0, description="礼物价值(元)")
+    uid: Optional[str] = Field(default=None, description="用户UID")
+    face_img: Optional[str] = Field(default=None, description="用户头像")
     msg_type: str = Field(default="gift", description="消息类型: gift, guard")
 
 class GiftInfoRoomResponse(BaseModel):

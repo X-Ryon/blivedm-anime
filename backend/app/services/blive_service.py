@@ -48,6 +48,8 @@ class BilibiliHandler(blivedm.BaseHandler):
             dm_text=message.msg,
             identity=identity,
             price=0,
+            uid=str(message.uid),
+            face_img=message.face,
             msg_type="danmaku"
         )
         
@@ -71,6 +73,7 @@ class BilibiliHandler(blivedm.BaseHandler):
             identity=identity,
             face_img=message.face,
             price=message.price,
+            uid=str(message.uid),
             msg_type="super_chat"
         )
         logger.info(f"[sc]房间:{self.room_id}，用户名:{message.uname}，sc: {message.message}，价值:{message.price}元")
@@ -128,6 +131,7 @@ class BilibiliHandler(blivedm.BaseHandler):
             gift_type=guard_name,
             num=message.num,
             price=price,
+            uid=str(message.uid),
             msg_type="guard"
         )
         logger.info(f"[舰队]房间:{self.room_id}，用户名:{message.uname}，舰队: {guard_name}，数量:{message.num}，单价:{price}元")
