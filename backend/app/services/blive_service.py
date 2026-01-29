@@ -295,11 +295,14 @@ class BLiveService:
         session: Optional[aiohttp.ClientSession] = None
         if final_sessdata:
             # Explicitly set cookie with domain to ensure it's used correctly
+            # Use SimpleCookie to set domain attribute
+            from http.cookies import SimpleCookie
+            cookie = SimpleCookie()
+            cookie["SESSDATA"] = final_sessdata
+            cookie["SESSDATA"]["domain"] = "bilibili.com"
+            
             cookie_jar = aiohttp.CookieJar()
-            cookie_jar.update_cookies({'SESSDATA': final_sessdata})
-            # Note: We don't strictly set domain here because aiohttp's default behavior 
-            # for dict-based cookies is to share them. But if blivedm is strict, 
-            # we rely on it finding the cookie.
+            cookie_jar.update_cookies(cookie)
             
             # Log masked sessdata for debugging
             masked_sessdata = final_sessdata[:5] + "***" + final_sessdata[-5:] if len(final_sessdata) > 10 else "***"

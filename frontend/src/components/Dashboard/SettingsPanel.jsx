@@ -150,18 +150,32 @@ const SettingsPanel = ({ visible, onClose }) => {
   const handleGiftAnimationChange = (giftName, animation) => {
     // 1. Update local state for immediate UI feedback
     const newAnimations = [...localGiftAnimations];
-    const index = newAnimations.findIndex(item => item.name === giftName);
+    // Backend uses gift_name, so we check for that first, or fallback to name (legacy/frontend only)
+    const index = newAnimations.findIndex(item => (item.gift_name || item.name) === giftName);
     
     if (index > -1) {
         if (animation) {
-            newAnimations[index].animation = animation;
+            // Update existing
+            newAnimations[index] = {
+                ...newAnimations[index],
+                animation_path: animation,
+                // Ensure we have the standardized keys
+                gift_name: giftName
+            };
         } else {
             // Remove entry if cleared
             newAnimations.splice(index, 1);
         }
     } else {
         if (animation) {
-            newAnimations.push({ name: giftName, animation });
+            // Find gift details to populate full record
+            const gift = giftList.find(g => g.name === giftName);
+            newAnimations.push({ 
+                gift_id: gift?.id || 0,
+                gift_name: giftName,
+                gift_img: gift?.img || '',
+                animation_path: animation 
+            });
         }
     }
     setLocalGiftAnimations(newAnimations);
@@ -206,8 +220,8 @@ const SettingsPanel = ({ visible, onClose }) => {
         key: 'animation',
         width: 200,
         render: (_, record) => {
-            const mapping = localGiftAnimations.find(m => m.name === record.name);
-            const value = mapping ? mapping.animation : undefined;
+            const mapping = localGiftAnimations.find(m => (m.gift_name || m.name) === record.name);
+            const value = mapping ? (mapping.animation_path || mapping.animation) : undefined;
             return (
                 <Select 
                   style={{ width: '100%' }} 
@@ -284,7 +298,10 @@ const SettingsPanel = ({ visible, onClose }) => {
           <Checkbox>自动登录账号</Checkbox>
         </Form.Item>
         <Form.Item name={['system', 'auto_connect']} valuePropName="checked">
-          <Checkbox>自动连接房间</Checkbox>
+          <Checkbox>自动连接上次的直播间</Checkbox>
+        </Form.Item>
+        <Form.Item name={['system', 'fill_history_danmaku']} valuePropName="checked">
+          <Checkbox>连接直播间时填充历史弹幕</Checkbox>
         </Form.Item>
 
         <Divider />

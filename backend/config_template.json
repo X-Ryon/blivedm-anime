@@ -1,9 +1,10 @@
 {
   "system": {
-    "auto_login": true,
+    "auto_login": false,
     "last_uid": "",
     "auto_connect": false,
-    "last_room_id": ""
+    "last_room_id": "",
+    "fill_history_danmaku": false
   },
   "resources": {
     "gift_animations": [],

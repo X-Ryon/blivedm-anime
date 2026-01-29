@@ -34,7 +34,7 @@ class UidInfoService:
         retry_count = 3
         
         # 避免同时并发请求导致风控，稍微随机等待一下
-        await asyncio.sleep(random.uniform(1, 3))
+        await asyncio.sleep(random.uniform(1, 2))
 
         async with aiohttp.ClientSession(cookies=cookies) as session:
             for i in range(retry_count):

@@ -29,7 +29,7 @@ const getBorderColor = (guardLevel) => {
     }
   };
 
-const DanmakuItem = ({ data }) => {
+const DanmakuItem = React.memo(({ data }) => {
   const { username, content, avatar, level, guardLevel } = data;
   
   return (
@@ -58,11 +58,11 @@ const DanmakuItem = ({ data }) => {
       </div>
     </div>
   );
-};
+});
 
 const DanmakuList = () => {
     const listRef = useRef(null);
-    const { danmakuList } = useDanmakuStore();
+    const danmakuList = useDanmakuStore(state => state.danmakuList);
     const [autoScroll, setAutoScroll] = useState(true);
 
     // 滚动处理

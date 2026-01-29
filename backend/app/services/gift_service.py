@@ -69,20 +69,27 @@ class GiftService:
                 
             merged = base_list + room_list
 
+            seen_names = set()
+            unique_gifts = []
+            
             for gift in merged:
                 name = gift.get("name")
+                if name in seen_names:
+                    continue
+                seen_names.add(name)
+                
                 price = float(gift.get("price", 0))/1000.0
                 coin_type = gift.get("coin_type") or "gold"
                 img = gift.get("img_basic") or gift.get("img_dynamic") or ""
-                gifts.append(dm_schema.GiftInfoRoomCreate(
+                unique_gifts.append(dm_schema.GiftInfoRoomCreate(
                     name=name, price=price, coin_type=coin_type, img=img
                 ))
 
             async with AsyncSessionLocal() as db:
                 async with db.begin():
                     try:
-                        saved = await crud_danmaku.replace_gift_info_room(db, gifts)
-                        logger.info(f"成功保存 {len(saved)} 个礼物信息到数据库")
+                        saved = await crud_danmaku.replace_gift_info_room(db, unique_gifts)
+                        logger.info(f"成功保存 {len(saved)} 个礼物信息到数据库 (去重前 {len(merged)} 个)")
                         return saved
                     except Exception as e:
                         logger.error(f"保存礼物信息到数据库失败: {e}")

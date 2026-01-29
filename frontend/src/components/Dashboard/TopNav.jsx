@@ -26,7 +26,8 @@ const TopNav = ({ onOpenSettings }) => {
     handleLoginSuccess
   } = useUserStore();
 
-  const { isConnected, roomTitle } = useDanmakuStore();
+  const isConnected = useDanmakuStore(state => state.isConnected);
+  const roomTitle = useDanmakuStore(state => state.roomTitle);
 
   useEffect(() => {
     fetchConfig();

@@ -11,7 +11,7 @@ const getAvatarUrl = (url) => {
   return `${api.defaults.baseURL}/proxy/image?url=${encodeURIComponent(url)}`;
 };
 
-const GiftItem = ({ data }) => {
+const GiftItem = React.memo(({ data }) => {
   const { username, giftName, count, price, avatar, level, time } = data;
   
   return (
@@ -37,11 +37,11 @@ const GiftItem = ({ data }) => {
       />
     </List.Item>
   );
-};
+});
 
 const GiftList = () => {
     const listRef = useRef(null);
-    const { giftList } = useDanmakuStore();
+    const giftList = useDanmakuStore(state => state.giftList);
     const [autoScroll, setAutoScroll] = useState(true);
 
     // 滚动处理

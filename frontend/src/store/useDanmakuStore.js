@@ -1,6 +1,19 @@
 import { create } from 'zustand';
 import { danmakuApi } from '../services/api';
 
+const formatTime = (timestamp) => {
+    // timestamp is in seconds (float/int)
+    // If timestamp is 0 or null/undefined, use current time
+    const date = (timestamp && timestamp > 0) ? new Date(timestamp * 1000) : new Date();
+    const Y = date.getFullYear();
+    const M = (date.getMonth() + 1).toString().padStart(2, '0');
+    const D = date.getDate().toString().padStart(2, '0');
+    const h = date.getHours().toString().padStart(2, '0');
+    const m = date.getMinutes().toString().padStart(2, '0');
+    const s = date.getSeconds().toString().padStart(2, '0');
+    return `${Y}-${M}-${D} ${h}:${m}:${s}`;
+};
+
 const useDanmakuStore = create((set) => ({
     // Connection State
     isConnected: false,
@@ -46,7 +59,7 @@ const useDanmakuStore = create((set) => ({
             price: gift.price,
             avatar: gift.face_img || '', // Backend might not send face_img for all gifts? check schema
             level: gift.level,
-            time: new Date().toLocaleTimeString()
+            time: formatTime(gift.timestamp)
         };
         return { giftList: [...state.giftList, newItem].slice(-200) };
     }),
@@ -60,7 +73,7 @@ const useDanmakuStore = create((set) => ({
             content: sc.dm_text, // Backend sends dm_text for SC content
             price: sc.price,
             avatar: sc.face_img,
-            time: new Date().toLocaleTimeString()
+            time: formatTime(sc.timestamp)
         };
         return { scList: [...state.scList, newItem].slice(-100) };
     }),
@@ -103,7 +116,7 @@ const useDanmakuStore = create((set) => ({
                      price: g.price,
                      avatar: g.face_img || '',
                      level: g.level,
-                     time: new Date().toLocaleTimeString() // Fallback time
+                     time: formatTime(g.timestamp)
                  }));
                  set(state => ({ giftList: [...giftList, ...state.giftList].slice(-200) }));
              }
@@ -116,7 +129,7 @@ const useDanmakuStore = create((set) => ({
                      content: s.dm_text,
                      price: s.price,
                      avatar: s.face_img,
-                     time: new Date().toLocaleTimeString()
+                     time: formatTime(s.timestamp)
                  }));
                  set(state => ({ scList: [...scList, ...state.scList].slice(-100) }));
              }

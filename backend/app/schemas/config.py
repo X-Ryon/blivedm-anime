@@ -6,6 +6,7 @@ class SystemConfig(BaseModel):
     last_uid: str = ""
     auto_connect: bool = False
     last_room_id: str = ""
+    fill_history_danmaku: bool = False
 
 class GiftAnimation(BaseModel):
     gift_id: int

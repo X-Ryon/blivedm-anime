@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Input, Button, Space, Card, message } from 'antd';
 import { ApiOutlined, KeyOutlined, DisconnectOutlined } from '@ant-design/icons';
 import useUserStore from '../../store/useUserStore';
@@ -6,8 +6,16 @@ import useDanmakuStore from '../../store/useDanmakuStore';
 import { listenerApi } from '../../services/api';
 
 const ConnectionManager = () => {
-  const { sessdata, config, updateConfig } = useUserStore();
-  const { isConnected, setConnected, addDanmaku, addGift, addSc, clearAll, setRoomTitle, fetchHistory } = useDanmakuStore();
+  const { sessdata, isLoggedIn, config, updateConfig } = useUserStore();
+  const isConnected = useDanmakuStore(state => state.isConnected);
+  const setConnected = useDanmakuStore(state => state.setConnected);
+  const addDanmaku = useDanmakuStore(state => state.addDanmaku);
+  const addGift = useDanmakuStore(state => state.addGift);
+  const addSc = useDanmakuStore(state => state.addSc);
+  const clearAll = useDanmakuStore(state => state.clearAll);
+  const setRoomTitle = useDanmakuStore(state => state.setRoomTitle);
+  const fetchHistory = useDanmakuStore(state => state.fetchHistory);
+  
   const [roomId, setRoomId] = useState('');
   const [sessDataInput, setSessDataInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -32,8 +40,19 @@ const ConnectionManager = () => {
   const handleConnect = async (targetRoomId, targetSessdata) => {
     // Priority: Argument > State
     const finalRoomId = targetRoomId || roomId;
-    // explicit check for undefined because targetSessdata could be empty string
-    const finalSessdata = targetSessdata !== undefined ? targetSessdata : sessDataInput;
+    
+    // 确定最终使用的 Sessdata
+    // 1. 如果显式传递了参数 (targetSessdata)，则使用参数
+    // 2. 否则使用输入框的值 (sessDataInput)
+    // 3. 如果前两者都为空，且当前处于已登录状态，则强制使用 Store 中的 sessdata (满足用户"已登录状态时应使用该账号sessdata"的需求)
+    let finalSessdata = targetSessdata !== undefined ? targetSessdata : sessDataInput;
+    
+    if (!finalSessdata && isLoggedIn && sessdata) {
+        console.log('Using store sessdata as fallback/default because user is logged in');
+        finalSessdata = sessdata;
+        // 同步更新输入框，让用户知道使用了 sessdata
+        setSessDataInput(sessdata);
+    }
 
     if (!finalRoomId) {
         message.error('请输入直播间 Room ID');
@@ -56,8 +75,10 @@ const ConnectionManager = () => {
             setRoomTitle(`Room ${finalRoomId}`);
         }
 
-        // Fetch History
-        fetchHistory(finalRoomId);
+        // Fetch History if enabled in config
+        if (config?.system?.fill_history_danmaku) {
+            fetchHistory(finalRoomId);
+        }
 
         // 2. 建立 WebSocket 连接
         const _wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -145,6 +166,13 @@ const ConnectionManager = () => {
   // let's suppress the warning for handleConnect, but include sessdata.
   useEffect(() => {
     // Only proceed if config is loaded and we haven't tried yet
+    // Note: We intentionally do NOT depend on [config, isConnected, sessdata] to trigger re-runs
+    // We only want this to run ONCE when the component mounts and config becomes available initially.
+    // If the user toggles 'auto_connect' in settings later, it should NOT trigger an immediate connection.
+    
+    // Check if config is loaded (not null)
+    if (!config) return;
+
     if (config?.system?.auto_connect && config?.system?.last_room_id && !isConnected && !autoConnectAttempted.current) {
         autoConnectAttempted.current = true;
         // Small delay to ensure other states (like sessdata from auto-login) might be ready
@@ -155,11 +183,15 @@ const ConnectionManager = () => {
         setTimeout(() => {
             handleConnect(config.system.last_room_id, sessdata);
         }, 0);
+    } else if (config && !autoConnectAttempted.current) {
+        // If config is loaded but auto_connect is false, mark as attempted so it doesn't trigger later
+        // when user toggles the setting
+        autoConnectAttempted.current = true;
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [config, isConnected, sessdata]);
+  }, [config]); // Run when config is loaded
 
-  const handleDisconnect = async () => {
+  const handleDisconnect = useCallback(async () => {
       if (wsRef.current) {
           wsRef.current.close();
           wsRef.current = null;
@@ -172,7 +204,14 @@ const ConnectionManager = () => {
       setConnected(false, null);
       setRoomTitle("-");
       message.success('已断开连接');
-  };
+  }, [setConnected, setRoomTitle]);
+
+  // 监听登录状态，如果退出登录且当前处于连接状态，则自动断开连接
+  useEffect(() => {
+    if (!isLoggedIn && isConnected) {
+        handleDisconnect();
+    }
+  }, [isLoggedIn, isConnected, handleDisconnect]);
 
   // 组件卸载时断开连接
   useEffect(() => {

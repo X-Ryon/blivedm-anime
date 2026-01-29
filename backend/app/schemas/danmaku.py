@@ -16,6 +16,7 @@ class DanmakuResponse(BaseModel):
     uid: Optional[str] = Field(default=None, description="用户UID")
     face_img: Optional[str] = Field(default=None, description="用户头像")
     msg_type: str = Field(default="danmaku", description="消息类型: danmaku, super_chat")
+    timestamp: float = Field(default=0.0, description="创建时间戳")
 
 class GiftResponse(BaseModel):
     """
@@ -30,6 +31,7 @@ class GiftResponse(BaseModel):
     uid: Optional[str] = Field(default=None, description="用户UID")
     face_img: Optional[str] = Field(default=None, description="用户头像")
     msg_type: str = Field(default="gift", description="消息类型: gift, guard")
+    timestamp: float = Field(default=0.0, description="创建时间戳")
 
 class GiftInfoRoomResponse(BaseModel):
     id: int = Field(..., description="礼物ID")

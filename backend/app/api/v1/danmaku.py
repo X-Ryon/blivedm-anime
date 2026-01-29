@@ -25,7 +25,8 @@ async def get_danmaku_history(room_id: str = Query(..., description="房间号")
                 price=0,
                 uid=d.uid,
                 face_img=d.face_img,
-                msg_type="danmaku"
+                msg_type="danmaku",
+                timestamp=d.create_time.timestamp() if d.create_time else 0.0
             ) for d in danmakus
         ]
         return Resp.success(data=data)
@@ -48,7 +49,8 @@ async def get_gift_history(room_id: str = Query(..., description="房间号"), l
                 price=g.price,
                 uid=g.uid,
                 face_img=g.face_img,
-                msg_type="guard" if g.gift_name in ["舰长", "提督", "总督"] else "gift"
+                msg_type="guard" if g.gift_name in ["舰长", "提督", "总督"] else "gift",
+                timestamp=g.create_time.timestamp() if g.create_time else 0.0
             ) for g in gifts
         ]
         return Resp.success(data=data)
@@ -71,7 +73,8 @@ async def get_sc_history(room_id: str = Query(..., description="房间号"), lim
                 price=s.price,
                 uid=s.uid,
                 face_img=s.face_img,
-                msg_type="super_chat"
+                msg_type="super_chat",
+                timestamp=s.create_time.timestamp() if s.create_time else 0.0
             ) for s in scs
         ]
         return Resp.success(data=data)

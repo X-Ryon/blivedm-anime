@@ -77,7 +77,7 @@ class QrLoginService:
                 qr.make(fit=True)
                 img = qr.make_image(fill_color="black", back_color="white")
                 
-                filename = f"bili_qr_{int(time.time())}.png"
+                filename = "bili_qrcode.png"
                 filepath = os.path.join(save_dir, filename)
                 img.save(filepath)
                 return os.path.abspath(filepath)
