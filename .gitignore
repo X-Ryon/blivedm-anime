@@ -70,7 +70,8 @@ node_modules
 dist
 dist-ssr
 *.local
-assets/
+static/asset/
+static/qrcode/
 
 # Editor directories and files
 !.vscode/extensions.json
