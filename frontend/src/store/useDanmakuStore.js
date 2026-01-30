@@ -78,6 +78,20 @@ const useDanmakuStore = create((set) => ({
         return { scList: [...state.scList, newItem].slice(-100) };
     }),
 
+    // Gift Metadata
+    giftMetadata: {},
+    updateGiftMetadata: (giftList) => {
+        const map = {};
+        if (Array.isArray(giftList)) {
+            giftList.forEach(gift => {
+                if (gift.name && gift.img) {
+                    map[gift.name] = gift.img;
+                }
+            });
+        }
+        set({ giftMetadata: map });
+    },
+
     clearAll: () => set({ 
         danmakuList: [], 
         giftList: [], 

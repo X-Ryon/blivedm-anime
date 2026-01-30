@@ -1,6 +1,6 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { ConfigProvider, theme } from 'antd';
+import { ConfigProvider, theme, App as AntdApp } from 'antd';
 import Admin from './pages/Admin';
 import Overlay from './pages/Overlay';
 import './App.css';
@@ -16,13 +16,15 @@ function App() {
         },
       }}
     >
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Navigate to="/admin" replace />} />
-          <Route path="/admin" element={<Admin />} />
-          <Route path="/overlay" element={<Overlay />} />
-        </Routes>
-      </BrowserRouter>
+      <AntdApp>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Navigate to="/admin" replace />} />
+            <Route path="/admin" element={<Admin />} />
+            <Route path="/overlay" element={<Overlay />} />
+          </Routes>
+        </BrowserRouter>
+      </AntdApp>
     </ConfigProvider>
   );
 }

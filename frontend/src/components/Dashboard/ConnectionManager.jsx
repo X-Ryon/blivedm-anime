@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Input, Button, Space, Card, message } from 'antd';
+import { Input, Button, Space, Card, App } from 'antd';
 import { ApiOutlined, KeyOutlined, DisconnectOutlined } from '@ant-design/icons';
 import useUserStore from '../../store/useUserStore';
 import useDanmakuStore from '../../store/useDanmakuStore';
 import { listenerApi } from '../../services/api';
 
 const ConnectionManager = () => {
+  const { message } = App.useApp();
   const { sessdata, isLoggedIn, config, updateConfig } = useUserStore();
   const isConnected = useDanmakuStore(state => state.isConnected);
   const setConnected = useDanmakuStore(state => state.setConnected);
@@ -139,7 +140,7 @@ const ConnectionManager = () => {
         ws.onerror = (error) => {
             console.error('WebSocket Error:', error);
             setLoading(false);
-            message.error('连接发生错误');
+            // message.error('连接发生错误'); // Suppress error popup to avoid spam/context warning if unmounted
         };
 
         wsRef.current = ws;
@@ -204,7 +205,7 @@ const ConnectionManager = () => {
       setConnected(false, null);
       setRoomTitle("-");
       message.success('已断开连接');
-  }, [setConnected, setRoomTitle]);
+  }, [setConnected, setRoomTitle, message]);
 
   // 监听连接状态，如果变为未连接且 WebSocket 仍存在，则清理 WebSocket
   useEffect(() => {

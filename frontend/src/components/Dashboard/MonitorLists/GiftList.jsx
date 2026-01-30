@@ -1,45 +1,94 @@
-import React from 'react';
-import { Avatar, Tag, Typography, Space } from 'antd';
-import { UserOutlined, GiftOutlined } from '@ant-design/icons';
+import React, { useEffect } from 'react';
+import { Tag, Typography } from 'antd';
+import { GiftOutlined } from '@ant-design/icons';
 import useDanmakuStore from '../../../store/useDanmakuStore';
 import useCachedImage from '../../../hooks/useCachedImage';
 import useDynamicList from '../../../hooks/useDynamicList';
+import { giftApi } from '../../../services/api';
 
 const { Text } = Typography;
 
+// --- 样式配置 ---
+// 在此处自定义礼物记录的行间距和内边距
+// padding: '上下 左右'
+const ROW_PADDING = '12px 16px'; 
+const ROW_LINE_HEIGHT = '28px';
+
+const CachedGiftImage = ({ giftName, giftImg, defaultIcon }) => {
+    // 1. Get Metadata from store
+    const giftMetadata = useDanmakuStore(state => state.giftMetadata);
+    
+    // Priority: 1. giftImg from prop (realtime message) 2. metadata lookup
+    // Add safe access to giftMetadata
+    const imgUrl = giftImg || (giftMetadata ? giftMetadata[giftName] : null);
+
+    // 2. Use cached image hook
+    const cachedUrl = useCachedImage(imgUrl, 'gift_icon'); 
+
+    if (cachedUrl) {
+        return <img src={cachedUrl} alt={giftName} style={{ width: 24, height: 24, objectFit: 'contain', verticalAlign: 'middle' }} />;
+    }
+    
+    return defaultIcon || <GiftOutlined style={{ color: '#eb2f96' }} />;
+};
+
 const GiftItem = React.memo(({ data }) => {
-  const { username, giftName, count, price, avatar, level, time } = data;
-  const avatarUrl = useCachedImage(avatar);
+  const { username, giftName, count, price, level, time, giftImg } = data;
   
+  // Layout: Username(Bold) | Level | "赠送" | GiftImg | GiftName x Count | Price | Time
   return (
-    <div style={{ padding: '8px 12px', display: 'flex', borderBottom: '1px solid #f0f0f0' }}>
-      <div style={{ marginRight: 16 }}>
-        <Avatar icon={<UserOutlined />} src={avatarUrl} size="small" />
-      </div>
-      <div style={{ flex: 1 }}>
-        <div style={{ marginBottom: 4 }}>
-          <Space size={4}>
-            <Text style={{ fontSize: 12 }}>{username}</Text>
-            <Tag color="orange" style={{ fontSize: 10, lineHeight: '16px', height: 18, padding: '0 4px', margin: 0 }}>Lv {level}</Tag>
-            <Text type="secondary" style={{ fontSize: 10 }}>{time}</Text>
-          </Space>
+    <div style={{ padding: ROW_PADDING, display: 'flex', alignItems: 'center', borderBottom: '1px solid #f0f0f0', lineHeight: ROW_LINE_HEIGHT }}>
+        {/* 1. Username (Bold) */}
+        <Text strong style={{ fontSize: 14, marginRight: 8, color: '#1890ff' }}>{username}</Text>
+        
+        {/* 2. Level */}
+        <Tag color="orange" style={{ fontSize: 10, lineHeight: '16px', height: 18, padding: '0 4px', margin: '0 8px 0 0', border: 'none' }}>Lv {level}</Tag>
+        
+        {/* 3. Action Text */}
+        <Text type="secondary" style={{ fontSize: 12, marginRight: 8 }}>赠送</Text>
+        
+        {/* 4. Gift Image & Name & Count */}
+        <div style={{ display: 'flex', alignItems: 'center', marginRight: 'auto' }}>
+             <div style={{ marginRight: 6, display: 'flex', alignItems: 'center' }}>
+                <CachedGiftImage giftName={giftName} giftImg={giftImg} />
+             </div>
+             <Text style={{ color: '#eb2f96', fontWeight: 500, fontSize: 14 }}>{giftName}</Text>
+             <Text style={{ marginLeft: 6, color: '#eb2f96', fontWeight: 600, fontSize: 14 }}>x {count}</Text>
         </div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Space>
-                <GiftOutlined style={{ color: '#eb2f96' }} />
-                <Text strong style={{ color: '#eb2f96' }}>{giftName} x {count}</Text>
-            </Space>
-            <Text type="secondary" style={{ fontSize: 11 }}>¥ {price}</Text>
-        </div>
-      </div>
+
+        {/* 5. Price */}
+        <Text type="secondary" style={{ fontSize: 12, marginRight: 16 }}>¥ {price}</Text>
+
+        {/* 6. Time */}
+        <Text type="secondary" style={{ fontSize: 12, minWidth: 130, textAlign: 'right' }}>{time}</Text>
     </div>
   );
 });
 
 const GiftList = () => {
     const giftList = useDanmakuStore(state => state.giftList);
+    const giftMetadata = useDanmakuStore(state => state.giftMetadata);
+    const updateGiftMetadata = useDanmakuStore(state => state.updateGiftMetadata);
+    
     // 使用动态列表 Hook：最大渲染200条，每次加载30条历史
     const { listRef, renderList, handleScroll } = useDynamicList(giftList, 50, 30);
+
+    // Initial fetch for gift metadata if empty
+    useEffect(() => {
+        const fetchMetadata = async () => {
+            if (!giftMetadata || Object.keys(giftMetadata).length === 0) {
+                try {
+                    const res = await giftApi.getGiftList();
+                    if (res.code === 200 && Array.isArray(res.data)) {
+                        updateGiftMetadata(res.data);
+                    }
+                } catch (e) {
+                    console.error("Failed to fetch gift metadata:", e);
+                }
+            }
+        };
+        fetchMetadata();
+    }, [giftMetadata, updateGiftMetadata]);
 
   return (
     <div style={{ 
