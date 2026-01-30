@@ -1,4 +1,4 @@
-# Bilidmj Anime (Bilibili 直播弹幕姬(动画版))
+# Bilidmj Anime (Bilibili 直播弹幕姬(互动版))
 
 这是一个基于 blivedm 的支持动画播放的 Bilibili 直播弹幕姬客户端。
 
