@@ -1,4 +1,4 @@
-# Bilidmj Anime (Bilibili 直播弹幕姬(动画版))
+# Bilidmj Anime (Bilibili 直播弹幕姬(互动版))
 
 这是一个基于 blivedm 的支持动画播放的 Bilibili 直播弹幕姬客户端。
 
@@ -7,7 +7,7 @@
 当前项目主要包含后端服务，前端部分正在规划中。
 
 - **backend/**: 核心逻辑、API 服务及弹幕监听模块。
-- **Frontend/**: 暂未开发 (计划采用 **React + Vite** 构建)。
+- **Frontend/**: 采用 **React + Vite** 构建，激情开发中。
 
 ## 🛠️ 技术栈
 
