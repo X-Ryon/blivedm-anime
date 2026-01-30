@@ -58,7 +58,7 @@ const TopNav = ({ onOpenSettings }) => {
 
   const handleDeleteUser = (e, user) => {
     e.stopPropagation();
-    Modal.confirm({
+    modal.confirm({
       title: '移除账号',
       content: `确定要移除账号 "${user.user_name}" 吗？`,
       okText: '确认',

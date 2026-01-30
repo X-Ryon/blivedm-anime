@@ -49,6 +49,8 @@ const useUserStore = create((set, get) => ({
             }
         } catch (error) {
             console.error('Failed to fetch config:', error);
+        } finally {
+            set({ isInitialized: true });
         }
     },
     

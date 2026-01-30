@@ -7,7 +7,7 @@ import { listenerApi } from '../../services/api';
 
 const ConnectionManager = () => {
   const { message } = App.useApp();
-  const { sessdata, isLoggedIn, config, updateConfig } = useUserStore();
+  const { sessdata, isLoggedIn, config, updateConfig, userInfo, isInitialized } = useUserStore();
   const isConnected = useDanmakuStore(state => state.isConnected);
   const setConnected = useDanmakuStore(state => state.setConnected);
   const addDanmaku = useDanmakuStore(state => state.addDanmaku);
@@ -92,7 +92,13 @@ const ConnectionManager = () => {
             console.log('WebSocket Connected');
             setConnected(true, finalRoomId);
             setLoading(false);
-            message.success(`已连接到房间 ${finalRoomId}`);
+            
+            if (finalSessdata) {
+                const name = userInfo?.user_name || "未知";
+                message.success(`成功连接！房间号：${finalRoomId}。已登录账号：${name}`);
+            } else {
+                message.success(`成功连接！房间号：${finalRoomId}。未使用登录账号，无法显示弹幕用户名！`);
+            }
 
             // Update last_room_id in config
             const currentConfig = useUserStore.getState().config;
@@ -166,31 +172,31 @@ const ConnectionManager = () => {
   // Since handleConnect is defined inside the component and depends on many things,
   // let's suppress the warning for handleConnect, but include sessdata.
   useEffect(() => {
-    // Only proceed if config is loaded and we haven't tried yet
+    // Only proceed if config is loaded AND initialization (including auto-login) is complete
     // Note: We intentionally do NOT depend on [config, isConnected, sessdata] to trigger re-runs
     // We only want this to run ONCE when the component mounts and config becomes available initially.
     // If the user toggles 'auto_connect' in settings later, it should NOT trigger an immediate connection.
     
-    // Check if config is loaded (not null)
-    if (!config) return;
+    // Check if config is loaded (not null) and store is initialized
+    if (!config || !isInitialized) return;
 
     if (config?.system?.auto_connect && config?.system?.last_room_id && !isConnected && !autoConnectAttempted.current) {
         autoConnectAttempted.current = true;
         // Small delay to ensure other states (like sessdata from auto-login) might be ready
         // But to be responsive, we just go.
-        console.log('Auto connecting to room:', config.system.last_room_id);
+        console.log('Auto connecting to room:', config.system.last_room_id, 'with sessdata:', sessdata ? 'Yes' : 'No');
         
         // Use setTimeout to avoid synchronous setState warning and allow other updates to settle
         setTimeout(() => {
             handleConnect(config.system.last_room_id, sessdata);
         }, 0);
-    } else if (config && !autoConnectAttempted.current) {
+    } else if (config && isInitialized && !autoConnectAttempted.current) {
         // If config is loaded but auto_connect is false, mark as attempted so it doesn't trigger later
         // when user toggles the setting
         autoConnectAttempted.current = true;
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [config]); // Run when config is loaded
+  }, [config, isInitialized]); // Run when config is loaded and initialization is complete
 
   const handleDisconnect = useCallback(async () => {
       if (wsRef.current) {
