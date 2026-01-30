@@ -63,8 +63,8 @@ class BilibiliHandler(blivedm.BaseHandler):
         """
         处理 Super Chat (醒目留言) 消息
         """
-        privilege_name = PRIVILEGE_MAP.get(message.privilege_type, "普通")
-        identity = "房管" if message.admin else ("主播" if message.privilege_type == 1 else "普通")
+        privilege_name = PRIVILEGE_MAP.get(message.guard_level, "普通")
+        identity = "普通" # SuperChatMessage不包含admin信息，且privilege_type对应guard_level
 
         resp = dm_schema.DanmakuResponse(
             user_name=message.uname,
@@ -181,13 +181,14 @@ class BilibiliHandler(blivedm.BaseHandler):
 
     async def _save_super_chat(self, message):
         """保存 SC 到数据库"""
+        privilege_name = PRIVILEGE_MAP.get(message.guard_level, "普通")
         async def op(db):
             data = dm_schema.SuperChatCreate(
                 room_id=str(self.room_id),
                 user_name=message.uname,
                 uid=str(message.uid),
                 level=message.medal_level if message.medal_level else 0,
-                privilege_name="普通", 
+                privilege_name=privilege_name, 
                 identity="普通", 
                 face_img=message.face,
                 sc_text=message.message,
