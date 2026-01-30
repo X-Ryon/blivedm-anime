@@ -102,15 +102,14 @@ const useUserStore = create((set, get) => ({
             sessdata 
         });
         
-        // 更新配置中的 last_uid 和 auto_login (如果需要)
+        // 更新配置中的 last_uid (保持 auto_login 不变)
         const currentConfig = get().config;
         if (currentConfig) {
             const newConfig = {
                 ...currentConfig,
                 system: {
                     ...currentConfig.system,
-                    last_uid: userInfo.uid.toString(),
-                    auto_login: true // 登录成功后默认开启自动登录？设计书没细说，但这是合理推断
+                    last_uid: userInfo.uid.toString()
                 }
             };
             await get().updateConfig(newConfig);

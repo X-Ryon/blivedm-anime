@@ -3,8 +3,21 @@ import { Modal, Button, Spin, message, Typography } from 'antd';
 import { ReloadOutlined } from '@ant-design/icons';
 import { authApi } from '../../services/api';
 import useUserStore from '../../store/useUserStore';
+import useCachedImage from '../../hooks/useCachedImage';
 
 const { Text } = Typography;
+
+const QrCodeImage = ({ src }) => {
+    // If src is base64, display directly
+    const isBase64 = src && src.startsWith('data:');
+    
+    // Only try to cache if it's NOT base64. Passing null to useCachedImage makes it return null.
+    const cachedUrl = useCachedImage(isBase64 ? null : src, 'qrcode');
+    
+    const finalSrc = isBase64 ? src : (cachedUrl || src);
+
+    return <img src={finalSrc} alt="Login QR Code" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />;
+};
 
 const LoginModal = ({ open, onCancel }) => {
     const [loading, setLoading] = useState(true);
@@ -30,11 +43,8 @@ const LoginModal = ({ open, onCancel }) => {
         try {
             const res = await authApi.getQrcode();
             if (res.code === 200) {
-                // 后端返回的是相对路径 /static/qrcode/xxx.png
-                // 我们需要拼接完整的 URL
-                // 假设后端运行在 localhost:8000
-                const backendOrigin = 'http://localhost:8000';
-                setQrCodeUrl(`${backendOrigin}${res.data.img_path}`);
+                // Backend returns base64 string directly
+                setQrCodeUrl(res.data.img_base64);
                 
                 const newKey = res.data.qrcode_key;
                 setQrCodeKey(newKey);
@@ -145,11 +155,7 @@ const LoginModal = ({ open, onCancel }) => {
                     <>
                         <div style={{ position: 'relative', width: 200, height: 200, marginBottom: 20 }}>
                             {qrCodeUrl && (
-                                <img 
-                                    src={qrCodeUrl} 
-                                    alt="Login QR Code" 
-                                    style={{ width: '100%', height: '100%', opacity: status === 'expired' ? 0.3 : 1 }} 
-                                />
+                                <QrCodeImage src={qrCodeUrl} status={status} />
                             )}
                             {status === 'expired' && (
                                 <div style={{

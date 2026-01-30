@@ -4,14 +4,14 @@ import { UserOutlined, SettingOutlined, LogoutOutlined, LoginOutlined, MinusCirc
 import LoginModal from './LoginModal';
 import useUserStore from '../../store/useUserStore';
 import useDanmakuStore from '../../store/useDanmakuStore';
-import api, { authApi } from '../../services/api';
+import { authApi } from '../../services/api';
+import useCachedImage from '../../hooks/useCachedImage';
 
 const { Title, Text } = Typography;
 
-const getAvatarUrl = (url) => {
-  if (!url) return null;
-  // Use backend proxy to avoid 403 Forbidden
-  return `${api.defaults.baseURL}/proxy/image?url=${encodeURIComponent(url)}`;
+const CachedAvatar = ({ src, size, icon }) => {
+    const cachedUrl = useCachedImage(src);
+    return <Avatar src={cachedUrl} size={size} icon={icon} />;
 };
 
 const TopNav = ({ onOpenSettings }) => {
@@ -101,7 +101,7 @@ const TopNav = ({ onOpenSettings }) => {
       label: (
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', minWidth: '160px' }}>
           <Space>
-            <Avatar src={getAvatarUrl(user.face_img)} size="small" icon={<UserOutlined />} />
+            <CachedAvatar src={user.face_img} size="small" icon={<UserOutlined />} />
             <Text ellipsis style={{ maxWidth: 100 }}>{user.user_name}</Text>
           </Space>
           <Button 
@@ -149,7 +149,7 @@ const TopNav = ({ onOpenSettings }) => {
         <Space size="large">
           <Dropdown menu={userMenu}>
             <Space style={{ cursor: 'pointer' }}>
-              <Avatar src={isLoggedIn ? userInfo?.face_img : null} icon={<UserOutlined />} />
+              <CachedAvatar src={isLoggedIn ? userInfo?.face_img : null} icon={<UserOutlined />} />
               <Text>{isLoggedIn ? userInfo?.user_name : "未登录"}</Text>
             </Space>
           </Dropdown>

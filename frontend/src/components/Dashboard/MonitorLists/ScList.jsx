@@ -2,17 +2,13 @@ import React, { useRef, useEffect, useState } from 'react';
 import { Avatar, Tag, Typography, Space } from 'antd';
 import { UserOutlined } from '@ant-design/icons';
 import useDanmakuStore from '../../../store/useDanmakuStore';
-import api from '../../../services/api';
+import useCachedImage from '../../../hooks/useCachedImage';
 
 const { Text } = Typography;
 
-const getAvatarUrl = (url) => {
-  if (!url) return null;
-  return `${api.defaults.baseURL}/proxy/image?url=${encodeURIComponent(url)}`;
-};
-
 const ScItem = React.memo(({ data }) => {
   const { username, content, avatar, level, time, price } = data;
+  const avatarUrl = useCachedImage(avatar);
   
   return (
     <div style={{ 
@@ -21,7 +17,7 @@ const ScItem = React.memo(({ data }) => {
       alignItems: 'flex-start',
       padding: '0 8px'
     }}>
-      <Avatar icon={<UserOutlined />} src={getAvatarUrl(avatar)} size="small" style={{ marginTop: 4, flexShrink: 0 }} />
+      <Avatar icon={<UserOutlined />} src={avatarUrl} size="small" style={{ marginTop: 4, flexShrink: 0 }} />
       <div style={{ marginLeft: 12, maxWidth: 'calc(100% - 44px)' }}>
         <Space size={4} style={{ marginBottom: 2, display: 'flex', alignItems: 'center' }}>
           <Text type="secondary" style={{ fontSize: 12 }}>{username}</Text>

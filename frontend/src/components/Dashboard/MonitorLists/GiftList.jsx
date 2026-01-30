@@ -2,22 +2,18 @@ import React, { useRef, useEffect, useState } from 'react';
 import { List, Avatar, Tag, Typography, Space } from 'antd';
 import { UserOutlined, GiftOutlined } from '@ant-design/icons';
 import useDanmakuStore from '../../../store/useDanmakuStore';
-import api from '../../../services/api';
+import useCachedImage from '../../../hooks/useCachedImage';
 
 const { Text } = Typography;
 
-const getAvatarUrl = (url) => {
-  if (!url) return null;
-  return `${api.defaults.baseURL}/proxy/image?url=${encodeURIComponent(url)}`;
-};
-
 const GiftItem = React.memo(({ data }) => {
   const { username, giftName, count, price, avatar, level, time } = data;
+  const avatarUrl = useCachedImage(avatar);
   
   return (
     <List.Item style={{ padding: '8px 12px' }}>
       <List.Item.Meta
-        avatar={<Avatar icon={<UserOutlined />} src={getAvatarUrl(avatar)} size="small" />}
+        avatar={<Avatar icon={<UserOutlined />} src={avatarUrl} size="small" />}
         title={
           <Space size={4}>
             <Text style={{ fontSize: 12 }}>{username}</Text>

@@ -4,9 +4,16 @@ import { ReloadOutlined, LoadingOutlined } from '@ant-design/icons';
 import useUserStore from '../../store/useUserStore';
 import { debounce } from '../../utils/debounce';
 import { giftApi, resourceApi, systemApi } from '../../services/api';
+import useCachedImage from '../../hooks/useCachedImage';
+import { avatarCache } from '../../utils/avatarCache';
 
 const { Option } = Select;
 const { Title, Text } = Typography;
+
+const CachedGiftIcon = ({ src }) => {
+    const cachedUrl = useCachedImage(src);
+    return cachedUrl ? <img src={cachedUrl} alt="" style={{width: 30, height: 30, objectFit: 'contain'}} /> : '-';
+};
 
 const SettingsPanel = ({ visible, onClose }) => {
   const [form] = Form.useForm();
@@ -147,6 +154,15 @@ const SettingsPanel = ({ visible, onClose }) => {
     }
   };
 
+  const handleClearCache = async () => {
+    try {
+        await avatarCache.clearAll();
+        message.success('图片缓存已清空');
+    } catch (e) {
+        message.error('清空缓存失败: ' + e.message);
+    }
+  };
+
   const handleGiftAnimationChange = (giftName, animation) => {
     // 1. Update local state for immediate UI feedback
     const newAnimations = [...localGiftAnimations];
@@ -169,11 +185,9 @@ const SettingsPanel = ({ visible, onClose }) => {
     } else {
         if (animation) {
             // Find gift details to populate full record
-            const gift = giftList.find(g => g.name === giftName);
+            
             newAnimations.push({ 
-                gift_id: gift?.id || 0,
                 gift_name: giftName,
-                gift_img: gift?.img || '',
                 animation_path: animation 
             });
         }
@@ -206,7 +220,7 @@ const SettingsPanel = ({ visible, onClose }) => {
         dataIndex: 'img', 
         width: 60, 
         align: 'center',
-        render: (src) => src ? <img src={src} alt="" style={{width: 30, height: 30, objectFit: 'contain'}} /> : '-' 
+        render: (src) => <CachedGiftIcon src={src} />
     },
     { title: '名称', dataIndex: 'name', width: 120 },
     { 
@@ -321,12 +335,11 @@ const SettingsPanel = ({ visible, onClose }) => {
             columns={giftColumns} 
             rowKey="id" 
             size="small" 
-            pagination={false} 
-            scroll={{ y: 300 }}
+            pagination={{ pageSize: 10, showSizeChanger: false }} 
             loading={loadingData}
             style={{ marginTop: 8 }}
             bordered
-            showHeader={false}
+            showHeader={true}
         />
 
         <Divider style={{ margin: '12px 0' }} />
@@ -342,6 +355,19 @@ const SettingsPanel = ({ visible, onClose }) => {
             bordered={false}
             showHeader={false}
         />
+
+        <Divider />
+        
+        <Title level={5}>缓存管理</Title>
+        <Popconfirm
+            title="清空图片缓存"
+            description="确定要清空所有图片缓存吗？"
+            onConfirm={handleClearCache}
+            okText="确定"
+            cancelText="取消"
+        >
+            <Button icon={<ReloadOutlined />} block>清空图片缓存</Button>
+        </Popconfirm>
 
         <Divider />
         
