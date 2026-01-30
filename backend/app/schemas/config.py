@@ -9,9 +9,7 @@ class SystemConfig(BaseModel):
     fill_history_danmaku: bool = False
 
 class GiftAnimation(BaseModel):
-    gift_id: int
     gift_name: str
-    gift_img: str
     animation_path: str
 
 class GuardSkins(BaseModel):

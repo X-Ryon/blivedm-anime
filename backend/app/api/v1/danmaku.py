@@ -11,6 +11,19 @@ router = APIRouter()
 async def get_danmaku_history(room_id: str = Query(..., description="房间号"), limit: int = 100):
     """
     获取最近弹幕历史
+
+    Description:
+        查询指定房间的最近弹幕记录。
+
+    Args:
+        room_id (str): 房间号
+        limit (int): 返回记录数量限制，默认100
+
+    Return:
+        Resp[List[DanmakuResponse]]: 包含弹幕列表的响应对象
+
+    Raises:
+        无
     """
     async with AsyncSessionLocal() as db:
         danmakus = await crud_danmaku.get_recent_danmaku(db, room_id, limit)
@@ -35,6 +48,19 @@ async def get_danmaku_history(room_id: str = Query(..., description="房间号")
 async def get_gift_history(room_id: str = Query(..., description="房间号"), limit: int = 100):
     """
     获取最近礼物历史
+
+    Description:
+        查询指定房间的最近礼物（包含上舰）记录。
+
+    Args:
+        room_id (str): 房间号
+        limit (int): 返回记录数量限制，默认100
+
+    Return:
+        Resp[List[GiftResponse]]: 包含礼物列表的响应对象
+
+    Raises:
+        无
     """
     async with AsyncSessionLocal() as db:
         gifts = await crud_danmaku.get_recent_gifts(db, room_id, limit)
@@ -59,6 +85,19 @@ async def get_gift_history(room_id: str = Query(..., description="房间号"), l
 async def get_sc_history(room_id: str = Query(..., description="房间号"), limit: int = 100):
     """
     获取最近SC历史
+
+    Description:
+        查询指定房间的最近Super Chat（醒目留言）记录。
+
+    Args:
+        room_id (str): 房间号
+        limit (int): 返回记录数量限制，默认100
+
+    Return:
+        Resp[List[DanmakuResponse]]: 包含SC列表的响应对象
+
+    Raises:
+        无
     """
     async with AsyncSessionLocal() as db:
         scs = await crud_danmaku.get_recent_super_chats(db, room_id, limit)

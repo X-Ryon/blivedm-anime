@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional
 
 # ----------------- 响应模型 (推送到客户端的数据格式) -----------------
@@ -40,8 +40,7 @@ class GiftInfoRoomResponse(BaseModel):
     coin_type: str = Field(..., max_length=64, description="货币类型")
     img: str = Field(..., max_length=255, description="礼物图片")
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class FetchGiftInfoResponse(BaseModel):
     message: str = Field(..., description="操作消息")

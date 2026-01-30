@@ -1,8 +1,9 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React from 'react';
 import { Avatar, Tag, Typography, Space } from 'antd';
 import { UserOutlined } from '@ant-design/icons';
 import useDanmakuStore from '../../../store/useDanmakuStore';
 import useCachedImage from '../../../hooks/useCachedImage';
+import useDynamicList from '../../../hooks/useDynamicList';
 
 const { Text } = Typography;
 
@@ -57,25 +58,9 @@ const DanmakuItem = React.memo(({ data }) => {
 });
 
 const DanmakuList = () => {
-    const listRef = useRef(null);
     const danmakuList = useDanmakuStore(state => state.danmakuList);
-    const [autoScroll, setAutoScroll] = useState(true);
-
-    // 滚动处理
-    useEffect(() => {
-        if (listRef.current && autoScroll) {
-            listRef.current.scrollTop = listRef.current.scrollHeight;
-        }
-    }, [danmakuList, autoScroll]);
-
-    // 监听用户手动滚动
-    const handleScroll = () => {
-        if (listRef.current) {
-            const { scrollTop, scrollHeight, clientHeight } = listRef.current;
-            const isBottom = scrollHeight - scrollTop - clientHeight < 10;
-            setAutoScroll(isBottom);
-        }
-    };
+    // 使用动态列表 Hook：最大渲染200条，每次加载30条历史
+    const { listRef, renderList, handleScroll } = useDynamicList(danmakuList, 50, 30);
 
     return (
         <div style={{ 
@@ -104,7 +89,7 @@ const DanmakuList = () => {
                     padding: '12px' 
                 }}
             >
-                {danmakuList.map(item => (
+                {renderList.map(item => (
                     <DanmakuItem key={item.id} data={item} />
                 ))}
             </div>

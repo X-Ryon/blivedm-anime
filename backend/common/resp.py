@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from typing import Generic, TypeVar, Optional, Any
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from backend.common.exception.code import ResponseCode
 
 T = TypeVar("T")
@@ -13,8 +13,7 @@ class Resp(BaseModel, Generic[T]):
     message: str
     data: Optional[T] = None
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     @classmethod
     def success(cls, data: T = None, message: str = "Success") -> "Resp[T]":

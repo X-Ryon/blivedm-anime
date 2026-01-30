@@ -38,32 +38,16 @@ class QrLoginService:
                 return None, None
 
     @classmethod
-    async def generate_qrcode_image(cls, url: str, save_dir: str = "static/qrcode") -> Optional[str]:    
+    async def generate_qrcode_base64(cls, url: str) -> Optional[str]:    
         """
-        根据 URL 生成二维码图片并保存到本地
-
-        Args:
-            url (str): 二维码内容 URL
-            save_dir (str): 图片保存目录，默认为 "static/qrcode"
-
-        Returns:
-            Optional[str]: 生成的图片绝对路径，如果失败则返回 None
+        根据 URL 生成二维码图片并返回 Base64 字符串
         """
-        if not os.path.exists(save_dir):
-            try:
-                os.makedirs(save_dir)
-            except OSError as e:
-                logger.error(f"创建目录失败: {save_dir}, error: {e}")
-                return None
-        
         try:
-            # 使用 qrcode 库本地生成二维码
             import qrcode
-            import time
             import asyncio
-            from functools import partial
+            import io
+            import base64
 
-            # 在 executor 中运行以避免阻塞事件循环
             loop = asyncio.get_running_loop()
             
             def _generate():
@@ -77,15 +61,16 @@ class QrLoginService:
                 qr.make(fit=True)
                 img = qr.make_image(fill_color="black", back_color="white")
                 
-                filename = "bili_qrcode.png"
-                filepath = os.path.join(save_dir, filename)
-                img.save(filepath)
-                return os.path.abspath(filepath)
+                # Save to memory buffer
+                buffered = io.BytesIO()
+                img.save(buffered, format="PNG")
+                img_str = base64.b64encode(buffered.getvalue()).decode()
+                return f"data:image/png;base64,{img_str}"
 
             return await loop.run_in_executor(None, _generate)
 
         except Exception as e:
-            logger.error(f"生成二维码图片异常: {e}")
+            logger.error(f"生成二维码Base64异常: {e}")
             return None
 
     @classmethod

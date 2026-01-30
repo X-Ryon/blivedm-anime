@@ -6,6 +6,23 @@ router = APIRouter()
 
 @router.get("/image")
 async def proxy_image(url: str = Query(..., description="Target image URL")):
+    """
+    图片反代接口
+
+    Description:
+        代理访问 Bilibili 图片资源，通过伪造 Referer 绕过 B 站防盗链机制，解决前端加载 403 问题。
+
+    Args:
+        url (str): 目标图片 URL
+
+    Return:
+        Response: 图片文件流
+
+    Raises:
+        Response(400): URL为空时返回
+        Response(status_code): 上游服务器返回非200状态码时透传
+        Response(500): 内部请求异常时返回
+    """
     if not url:
         return Response(status_code=400)
     

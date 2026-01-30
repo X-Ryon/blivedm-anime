@@ -2,12 +2,12 @@ import json
 import os
 from pathlib import Path
 from backend.app.schemas.config import AppConfig
+from backend.core.conf import settings
 
 class ConfigService:
     def __init__(self):
-        # 假设 config.json 位于 backend 目录下
-        # 获取当前文件 (backend/app/services/config_service.py) 的父目录的父目录的父目录 -> backend
-        self.config_path = Path(__file__).resolve().parent.parent.parent / "config.json"
+        # 配置文件路径
+        self.config_path = settings.BACKEND_DIR / "config.json"
 
     def get_config(self) -> AppConfig:
         """读取并解析配置文件"""

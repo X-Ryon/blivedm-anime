@@ -10,42 +10,59 @@ from backend.app.services.uidinfo_service import uidinfo_service
 from backend.app.schemas.auth import UserCreate, UserInfo, DeleteUserResponse
 from backend.common.resp import Resp
 from backend.common.exception.custom_exception import InternalServerException, NotFoundException
+from backend.core.conf import settings
 
 router = APIRouter()
 
 @router.get("/auth/qrcode", summary="获取B站登录二维码", response_model=Resp)
 async def get_login_qrcode():
     """
-    获取登录二维码
-    1. 获取Url和Key
-    2. 生成二维码图片
-    3. 返回图片路径和Key
+    获取B站登录二维码
+
+    Description:
+        获取B站扫码登录所需的URL和二维码Key，并生成二维码图片保存到服务器。
+
+    Args:
+        无
+
+    Return:
+        Resp: 包含二维码URL、Key及图片路径的响应对象
+
+    Raises:
+        InternalServerException: 获取二维码或生成图片失败时抛出
     """
     url, key = await qrlogin_service.get_qrcode_data()
     if not url or not key:
         raise InternalServerException(message="获取二维码失败")
     
-    # 生成图片
-    # 确保 static 目录存在
-    static_dir = os.path.join(os.getcwd(), "static", "qrcode")
-    img_path = await qrlogin_service.generate_qrcode_image(url, save_dir=static_dir)
+    # 生成图片 Base64
+    img_base64 = await qrlogin_service.generate_qrcode_base64(url)
     
-    if not img_path:
+    if not img_base64:
         raise InternalServerException(message="生成二维码图片失败")
-
-    # 构建相对路径供前端访问
-    relative_path = f"/static/qrcode/{os.path.basename(img_path)}"
     
     return Resp.success(data={
         "url": url,
         "qrcode_key": key,
-        "img_path": relative_path
+        "img_base64": img_base64
     })
 
 @router.get("/auth/poll", summary="轮询二维码登录状态", response_model=Resp)
 async def poll_login_status(qrcode_key: str = Query(..., description="二维码Key")):
     """
-    轮询登录状态
+    轮询二维码登录状态
+
+    Description:
+        根据二维码Key轮询B站登录接口，检查用户是否已扫码确认。若登录成功，自动获取用户信息并保存到数据库。
+
+    Args:
+        qrcode_key (str): 二维码唯一标识Key
+
+    Return:
+        Resp: 包含登录状态、用户信息及SESSDATA的响应对象
+
+    Raises:
+        InternalServerException: 获取状态失败或保存用户信息失败时抛出
     """
     result = await qrlogin_service.poll_status(qrcode_key)
     if not result:

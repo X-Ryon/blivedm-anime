@@ -12,6 +12,21 @@ router = APIRouter()
 
 @router.post("/gift-info-room", response_model=dm_schema.FetchGiftInfoResponse)
 async def fetch_gift_info_room(request: dm_schema.FetchGiftInfoRequest):
+    """
+    更新房间礼物列表
+
+    Description:
+        从 Bilibili API 获取指定房间的礼物列表，并保存到本地数据库。
+
+    Args:
+        request (FetchGiftInfoRequest): 包含房间号和用户名的请求体
+
+    Return:
+        FetchGiftInfoResponse: 包含更新结果和礼物列表的响应对象
+
+    Raises:
+        无
+    """
     room_id_int = int(request.room_id)
     gifts = await gift_service.fetch_and_save(room_id_int, request.user_name)
     return {
@@ -23,7 +38,20 @@ async def fetch_gift_info_room(request: dm_schema.FetchGiftInfoRequest):
 @router.get("/list", summary="获取所有礼物列表", response_model=Resp[List[dm_schema.GiftInfoRoomResponse]])
 async def get_gift_list():
     """
-    获取数据库中存储的所有礼物信息
+    获取所有礼物列表
+
+    Description:
+        获取数据库中存储的所有礼物信息（用于映射表配置等）。
+        若数据库为空，会自动插入默认模拟数据。
+
+    Args:
+        无
+
+    Return:
+        Resp[List[GiftInfoRoomResponse]]: 包含礼物信息的响应列表
+
+    Raises:
+        无
     """
     async with AsyncSessionLocal() as db:
         gifts = await crud_danmaku.get_all_gift_info_room(db)

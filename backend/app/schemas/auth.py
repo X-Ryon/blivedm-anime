@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional
 
 
@@ -15,8 +15,7 @@ class UserInfo(BaseModel):
     face_img: Optional[str] = Field(None, description="用户头像")
     sessdata: str = Field(..., max_length=512, description="Sessdata Cookie值")
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class DeleteUserResponse(BaseModel):
     success: bool = Field(..., description="是否删除成功")

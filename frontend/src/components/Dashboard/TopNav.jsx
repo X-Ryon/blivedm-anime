@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Button, Avatar, Dropdown, Space, Typography, Tag, Modal } from 'antd';
+import { Button, Avatar, Dropdown, Space, Typography, Tag, Modal, message } from 'antd';
 import { UserOutlined, SettingOutlined, LogoutOutlined, LoginOutlined, MinusCircleOutlined } from '@ant-design/icons';
 import LoginModal from './LoginModal';
 import useUserStore from '../../store/useUserStore';
 import useDanmakuStore from '../../store/useDanmakuStore';
-import { authApi } from '../../services/api';
+import { authApi, listenerApi } from '../../services/api';
 import useCachedImage from '../../hooks/useCachedImage';
 
 const { Title, Text } = Typography;
@@ -28,6 +28,8 @@ const TopNav = ({ onOpenSettings }) => {
 
   const isConnected = useDanmakuStore(state => state.isConnected);
   const roomTitle = useDanmakuStore(state => state.roomTitle);
+  const setConnected = useDanmakuStore(state => state.setConnected);
+  const setRoomTitle = useDanmakuStore(state => state.setRoomTitle);
 
   useEffect(() => {
     fetchConfig();
@@ -75,11 +77,25 @@ const TopNav = ({ onOpenSettings }) => {
     });
   };
 
-  const handleMenuClick = (e) => {
+  const handleMenuClick = async (e) => {
     if (e.key === 'login') {
       setIsLoginModalOpen(true);
     } else if (e.key === 'logout') {
+      if (isConnected) {
+        const hide = message.loading('正在断开连接...', 0);
+        try {
+            await listenerApi.stop();
+        } catch (error) {
+            console.error('Failed to stop listener:', error);
+        } finally {
+            hide();
+            setConnected(false, null);
+            setRoomTitle("-");
+            message.success('已断开连接');
+        }
+      }
       logout();
+      message.success('已退出登录');
     } else if (e.key.startsWith('user_')) {
       const uid = e.key.split('_')[1];
       const user = savedUsers.find(u => u.uid.toString() === uid);
@@ -131,7 +147,7 @@ const TopNav = ({ onOpenSettings }) => {
     <>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', height: '100%' }}>
         <Space size="large" align="center">
-          <Title level={4} style={{ margin: 0 }}>Bilibili 直播弹幕姬</Title>
+          <Title level={4} style={{ margin: 0 }}>Bilibili 直播弹幕姬-互动版</Title>
           <div style={{ display: 'flex', alignItems: 'center' }}>
             <Tag color={isConnected ? 'green' : 'default'} style={{ margin: 0, marginRight: 8 }}>
               {isConnected ? '已连接' : '未连接'}

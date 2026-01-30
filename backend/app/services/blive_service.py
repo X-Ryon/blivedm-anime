@@ -30,9 +30,10 @@ class BilibiliHandler(blivedm.BaseHandler):
     Bilibili 直播弹幕消息处理器
     负责处理收到的弹幕、礼物、SC 等消息，将其转换为内部 Schema 并广播/存储
     """
-    def __init__(self, room_id: int, service: 'BLiveService'):
+    def __init__(self, room_id: int, service: 'BLiveService', save_to_db: bool = True):
         self.room_id = room_id
         self.service = service
+        self.save_to_db = save_to_db
 
     def _on_danmaku(self, client: blivedm.BLiveClient, message: web_models.DanmakuMessage):
         """
@@ -149,97 +150,98 @@ class BilibiliHandler(blivedm.BaseHandler):
         asyncio.create_task(self.service.broadcast(self.room_id, resp))
         asyncio.create_task(self._save_guard(message, guard_name))
 
-    async def _save_danmaku(self, message, privilege_name, identity):
-        """保存弹幕到数据库"""
+    async def _save_to_db(self, db_op, error_msg: str):
+        """
+        通用的数据库保存辅助方法，包含事务管理和异常处理
+        """
         async with AsyncSessionLocal() as db:
             try:
-                data = dm_schema.DanmakuCreate(
-                    room_id=str(self.room_id),
-                    user_name=message.uname,
-                    uid=str(message.uid),
-                    level=message.medal_level if message.medal_level else 0,
-                    privilege_name=privilege_name,
-                    identity=identity,
-                    face_img=message.face,
-                    dm_text=message.msg
-                )
-                await crud_danmaku.create_danmaku(db, data)
+                await db_op(db)
                 await db.commit()
             except Exception as e:
                 await db.rollback()
-                logger.error(f"保存弹幕失败: {e}")
+                logger.error(f"{error_msg}: {e}")
+
+    async def _save_danmaku(self, message, privilege_name, identity):
+        """保存弹幕到数据库"""
+        async def op(db):
+            data = dm_schema.DanmakuCreate(
+                room_id=str(self.room_id),
+                user_name=message.uname,
+                uid=str(message.uid),
+                level=message.medal_level if message.medal_level else 0,
+                privilege_name=privilege_name,
+                identity=identity,
+                face_img=message.face,
+                dm_text=message.msg
+            )
+            await crud_danmaku.create_danmaku(db, data)
+        
+        await self._save_to_db(op, "保存弹幕失败")
 
     async def _save_super_chat(self, message):
         """保存 SC 到数据库"""
-        async with AsyncSessionLocal() as db:
-            try:
-                data = dm_schema.SuperChatCreate(
-                    room_id=str(self.room_id),
-                    user_name=message.uname,
-                    uid=str(message.uid),
-                    level=message.medal_level if message.medal_level else 0,
-                    privilege_name="普通", 
-                    identity="普通", 
-                    face_img=message.face,
-                    sc_text=message.message,
-                    price=message.price
-                )
-                await crud_danmaku.create_super_chat(db, data)
-                await db.commit()
-            except Exception as e:
-                await db.rollback()
-                logger.error(f"保存sc失败: {e}")
+        async def op(db):
+            data = dm_schema.SuperChatCreate(
+                room_id=str(self.room_id),
+                user_name=message.uname,
+                uid=str(message.uid),
+                level=message.medal_level if message.medal_level else 0,
+                privilege_name="普通", 
+                identity="普通", 
+                face_img=message.face,
+                sc_text=message.message,
+                price=message.price
+            )
+            await crud_danmaku.create_super_chat(db, data)
+            
+        await self._save_to_db(op, "保存SC失败")
 
     async def _save_gift(self, message, price: float):
         """保存礼物到数据库"""
-        async with AsyncSessionLocal() as db:
-            try:
-                data = dm_schema.GiftCreate(
-                    room_id=str(self.room_id),
-                    user_name=message.uname,
-                    uid=str(message.uid),
-                    level=message.medal_level if message.medal_level else 0,
-                    privilege_name="普通",
-                    identity="普通",
-                    face_img=message.face,
-                    gift_name=message.gift_name,
-                    gift_num=message.num,
-                    price=price
-                )
-                await crud_danmaku.create_gift(db, data)
-                await db.commit()
-            except Exception as e:
-                await db.rollback()
-                logger.error(f"保存礼物失败: {e}")
+        async def op(db):
+            data = dm_schema.GiftCreate(
+                room_id=str(self.room_id),
+                user_name=message.uname,
+                uid=str(message.uid),
+                level=message.medal_level if message.medal_level else 0,
+                privilege_name="普通",
+                identity="普通",
+                face_img=message.face,
+                gift_name=message.gift_name,
+                gift_num=message.num,
+                price=price
+            )
+            await crud_danmaku.create_gift(db, data)
+            
+        await self._save_to_db(op, "保存礼物失败")
 
     async def _save_guard(self, message, privilege_name):
         """保存舰队信息到数据库"""
-        async with AsyncSessionLocal() as db:
-            try:
-                level = 0
-                if hasattr(message, 'medal_level') and message.medal_level:
-                    level = message.medal_level
-                
-                face = ''
-                if hasattr(message, 'face'):
-                    face = message.face
-                data = dm_schema.GiftCreate(
-                    room_id=str(self.room_id),
-                    user_name=message.username,
-                    uid=str(message.uid),
-                    level=level, 
-                    privilege_name=privilege_name,
-                    identity="普通",
-                    face_img=face,
-                    gift_name=privilege_name,
-                    gift_num=message.num,
-                    price=float(message.price) / 1000.0
-                )
-                await crud_danmaku.create_gift(db, data)
-                await db.commit()
-            except Exception as e:
-                await db.rollback()
-                logger.error(f"保存舰队失败: {e}")
+        async def op(db):
+            level = 0
+            if hasattr(message, 'medal_level') and message.medal_level:
+                level = message.medal_level
+            
+            face = ''
+            if hasattr(message, 'face'):
+                face = message.face
+            
+            data = dm_schema.GiftCreate(
+                room_id=str(self.room_id),
+                user_name=message.username,
+                uid=str(message.uid),
+                level=level, 
+                privilege_name=privilege_name,
+                identity="普通",
+                face_img=face,
+                gift_name=privilege_name,
+                gift_num=message.num,
+                price=float(message.price) / 1000.0
+            )
+            await crud_danmaku.create_gift(db, data)
+            
+        await self._save_to_db(op, "保存舰队失败")
 
 class BLiveService:
     """
@@ -311,17 +313,20 @@ class BLiveService:
             session = aiohttp.ClientSession(cookie_jar=cookie_jar, headers={'User-Agent': settings.HEADERS['User-Agent']})
             self.sessions[room_id] = session
             
+        # 判断是否应该保存到数据库：只有登录状态下才保存
+        should_save_to_db = bool(final_sessdata)
+
         client = blivedm.BLiveClient(room_id, session=session)
-        handler = BilibiliHandler(room_id, self)
+        handler = BilibiliHandler(room_id, self, save_to_db=should_save_to_db)
         client.set_handler(handler)
         self.clients[room_id] = client
         client.start()
         
         # 获取并保存房间信息
-        title = await self._fetch_and_save_room_info(room_id, session)
+        title = await self._fetch_and_save_room_info(room_id, session, save_to_db=should_save_to_db)
         return title
 
-    async def _fetch_and_save_room_info(self, room_id: int, session: Optional[aiohttp.ClientSession] = None) -> Optional[str]:
+    async def _fetch_and_save_room_info(self, room_id: int, session: Optional[aiohttp.ClientSession] = None, save_to_db: bool = True) -> Optional[str]:
         """
         获取并保存房间信息到数据库
         Returns:
@@ -345,19 +350,20 @@ class BLiveService:
                     host_uid = room_info['uid']
                     host_name = await self._fetch_user_name_by_uid(host_uid, session)
                     
-                    async with AsyncSessionLocal() as db:
-                        try:
-                            room_data = room_schema.RoomCreate(
-                                room_id=str(room_id),
-                                title=title,
-                                host=host_name or "Unknown"
-                            )
-                            await crud_room.create_or_update_room(db, room_data)
-                            await db.commit()
-                            logger.info(f"保存房间信息: {title}, 主播: {host_name}")
-                        except Exception as e:
-                            await db.rollback()
-                            logger.error(f"保存房间信息失败: {e}")
+                    if save_to_db:
+                        async with AsyncSessionLocal() as db:
+                            try:
+                                room_data = room_schema.RoomCreate(
+                                    room_id=str(room_id),
+                                    title=title,
+                                    host=host_name or "Unknown"
+                                )
+                                await crud_room.create_or_update_room(db, room_data)
+                                await db.commit()
+                                logger.info(f"保存房间信息: {title}, 主播: {host_name}")
+                            except Exception as e:
+                                await db.rollback()
+                                logger.error(f"保存房间信息失败: {e}")
         except Exception as e:
             logger.error(f"获取房间信息失败: {e}")
         finally:
@@ -445,4 +451,5 @@ class BLiveService:
                     self.disconnect(connection, room_id)
 
 # 全局单例
+blive_service : BLiveService = BLiveService()
 blive_service : BLiveService = BLiveService()

@@ -1,5 +1,7 @@
 from functools import lru_cache
 from typing import Literal
+from pathlib import Path
+import sys
 
 from pydantic_settings import BaseSettings
 
@@ -8,6 +10,15 @@ class Settings(BaseSettings):
     """全局配置"""
     # .env 当前环境
     ENVIRONMENT: Literal["dev", "prod"] = "dev"
+
+    BASE_DIR: Path = Path(__file__).resolve().parent.parent.parent
+    
+    # 后端根目录
+    BACKEND_DIR: Path = BASE_DIR / "backend"
+    
+    # 静态文件目录
+    STATIC_DIR: Path = BASE_DIR / "frontend" / "static"
+    STATIC_ASSETS_DIR: Path = STATIC_DIR / "asset"
 
     # 接口配置
     API_V1_PATH: str = "/api/v1"
@@ -69,3 +80,6 @@ def get_settings() -> Settings:
 
 # 创建全局配置实例
 settings = get_settings()
+
+if __name__ == "__main__":
+    print(settings.BASE_DIR)

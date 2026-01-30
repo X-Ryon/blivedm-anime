@@ -1,6 +1,6 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { Drawer, Form, Checkbox, Select, Button, Input, Space, Divider, message, Spin, Popconfirm, Table, Typography } from 'antd';
-import { ReloadOutlined, LoadingOutlined } from '@ant-design/icons';
+import { ReloadOutlined, LoadingOutlined, UploadOutlined, FolderOpenOutlined } from '@ant-design/icons';
 import useUserStore from '../../store/useUserStore';
 import { debounce } from '../../utils/debounce';
 import { giftApi, resourceApi, systemApi } from '../../services/api';
@@ -17,6 +17,7 @@ const CachedGiftIcon = ({ src }) => {
 
 const SettingsPanel = ({ visible, onClose }) => {
   const [form] = Form.useForm();
+  const fileInputRef = useRef(null);
   const { config, updateConfig, resetConfig } = useUserStore();
   const [saving, setSaving] = useState(false);
   
@@ -213,6 +214,49 @@ const SettingsPanel = ({ visible, onClose }) => {
     });
   };
 
+  const triggerUpload = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleUploadFiles = async (e) => {
+      const files = e.target.files;
+      if (!files || files.length === 0) return;
+
+      const formData = new FormData();
+      for (let i = 0; i < files.length; i++) {
+          formData.append('files', files[i]);
+      }
+
+      const hide = message.loading('正在上传...', 0);
+      try {
+          const res = await resourceApi.uploadAssets(formData);
+          if (res.code === 200) {
+              message.success(res.message);
+              fetchData();
+          } else {
+              message.error(res.message);
+          }
+      } catch (error) {
+          console.error('Upload error:', error);
+          message.error('上传失败');
+      } finally {
+          hide();
+          // Reset input
+          e.target.value = '';
+      }
+  };
+
+  const handleOpenFolder = async () => {
+      try {
+          const res = await resourceApi.openAssetsFolder();
+          if (res.code !== 200) {
+              message.error(res.message);
+          }
+      } catch (error) {
+          message.error(`打开文件夹失败: ${error.message}`);
+      }
+  };
+
   const giftColumns = [
     { title: 'ID', dataIndex: 'id', width: 60, align: 'center' },
     { 
@@ -300,7 +344,7 @@ const SettingsPanel = ({ visible, onClose }) => {
       placement="right"
       onClose={onClose}
       open={visible}
-      width={600}
+      size={600}
     >
       <Form 
         form={form} 
@@ -322,6 +366,18 @@ const SettingsPanel = ({ visible, onClose }) => {
 
         <Title level={5}>资源配置</Title>
         
+        <div style={{ marginBottom: 12, display: 'flex', gap: 8 }}>
+            <Button icon={<UploadOutlined />} onClick={triggerUpload}>上传素材文件</Button>
+            <Button icon={<FolderOpenOutlined />} onClick={handleOpenFolder}>查看文件</Button>
+        </div>
+        <input 
+            type="file" 
+            ref={fileInputRef} 
+            style={{ display: 'none' }} 
+            onChange={handleUploadFiles} 
+            multiple 
+        />
+
         <Text strong>礼物 - 动画映射</Text>
         <Input 
             placeholder="搜索礼物名称" 

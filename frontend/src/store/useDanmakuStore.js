@@ -103,7 +103,7 @@ const useDanmakuStore = create((set) => ({
                                 d.privilege_name === "提督" ? 2 : 
                                 d.privilege_name === "总督" ? 1 : 0
                  }));
-                 set(state => ({ danmakuList: [...danmakuList, ...state.danmakuList].slice(-200) }));
+                 set(state => ({ danmakuList: [...danmakuList, ...state.danmakuList].slice(-5000) }));
              }
             
              if (giftRes.code === 200) {
@@ -118,7 +118,7 @@ const useDanmakuStore = create((set) => ({
                      level: g.level,
                      time: formatTime(g.timestamp)
                  }));
-                 set(state => ({ giftList: [...giftList, ...state.giftList].slice(-200) }));
+                 set(state => ({ giftList: [...giftList, ...state.giftList].slice(-2000) }));
              }
 
              if (scRes.code === 200) {
@@ -131,7 +131,7 @@ const useDanmakuStore = create((set) => ({
                      avatar: s.face_img,
                      time: formatTime(s.timestamp)
                  }));
-                 set(state => ({ scList: [...scList, ...state.scList].slice(-100) }));
+                 set(state => ({ scList: [...scList, ...state.scList].slice(-1000) }));
              }
         } catch (error) {
             console.error("Failed to fetch history:", error);

@@ -15,7 +15,21 @@ async def websocket_listen_endpoint(
     user_name: Optional[str] = Query(None, description="用户名称，用于查找数据库中的 Cookie")
 ):
     """
-    WebSocket 端点：实时接收所有类型消息（弹幕、礼物、SC、上舰）
+    WebSocket 监听端点
+
+    Description:
+        建立 WebSocket 连接，实时推送弹幕、礼物、SC 等消息给前端。
+
+    Args:
+        websocket (WebSocket): WebSocket 连接对象
+        room_id (int): 房间号
+        user_name (Optional[str]): 关联用户名 (已废弃)
+
+    Return:
+        None
+
+    Raises:
+        WebSocketDisconnect: 连接断开时处理
     """
     await blive_service.connect(websocket, room_id, user_name)
     try:
@@ -30,7 +44,20 @@ async def websocket_listen_endpoint(
 @router.post("/start", response_model=StartListenResponse)
 async def start_listen(request: ListenRequest):
     """
-    接口: 启动监听任务 (通常由 WebSocket 自动触发，也可手动调用)
+    启动监听任务
+
+    Description:
+        手动启动对指定直播间的监听。通常由 WebSocket 连接自动触发，但也可用于手动控制。
+        支持单例模式，启动新房间会自动停止旧房间。
+
+    Args:
+        request (ListenRequest): 包含房间号和Sessdata的请求体
+
+    Return:
+        StartListenResponse: 包含监听状态、WebSocket流地址及房间标题
+
+    Raises:
+        无
     """
     room_id_int = int(request.room_id)
     # user_name 参数已废弃，传递 None
@@ -47,7 +74,19 @@ async def start_listen(request: ListenRequest):
 @router.post("/stop", response_model=StopListenResponse)
 async def stop_listen():
     """
-    接口: 停止当前正在监听的房间
+    停止监听任务
+
+    Description:
+        停止当前正在监听的房间。
+
+    Args:
+        无
+
+    Return:
+        StopListenResponse: 包含操作结果消息
+
+    Raises:
+        无
     """
     current_room_id = blive_service.current_room_id
     if current_room_id:

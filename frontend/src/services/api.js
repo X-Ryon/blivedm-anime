@@ -40,6 +40,12 @@ export const giftApi = {
 export const resourceApi = {
     // 获取素材列表
     getAssets: () => api.get('/resources/assets'),
+    // 上传素材
+    uploadAssets: (formData) => api.post('/resources/assets/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+    }),
+    // 打开素材文件夹
+    openAssetsFolder: () => api.post('/resources/assets/open_folder'),
 };
 
 export const systemApi = {

@@ -1,8 +1,9 @@
-import React, { useRef, useEffect, useState } from 'react';
-import { List, Avatar, Tag, Typography, Space } from 'antd';
+import React from 'react';
+import { Avatar, Tag, Typography, Space } from 'antd';
 import { UserOutlined, GiftOutlined } from '@ant-design/icons';
 import useDanmakuStore from '../../../store/useDanmakuStore';
 import useCachedImage from '../../../hooks/useCachedImage';
+import useDynamicList from '../../../hooks/useDynamicList';
 
 const { Text } = Typography;
 
@@ -11,50 +12,34 @@ const GiftItem = React.memo(({ data }) => {
   const avatarUrl = useCachedImage(avatar);
   
   return (
-    <List.Item style={{ padding: '8px 12px' }}>
-      <List.Item.Meta
-        avatar={<Avatar icon={<UserOutlined />} src={avatarUrl} size="small" />}
-        title={
+    <div style={{ padding: '8px 12px', display: 'flex', borderBottom: '1px solid #f0f0f0' }}>
+      <div style={{ marginRight: 16 }}>
+        <Avatar icon={<UserOutlined />} src={avatarUrl} size="small" />
+      </div>
+      <div style={{ flex: 1 }}>
+        <div style={{ marginBottom: 4 }}>
           <Space size={4}>
             <Text style={{ fontSize: 12 }}>{username}</Text>
             <Tag color="orange" style={{ fontSize: 10, lineHeight: '16px', height: 18, padding: '0 4px', margin: 0 }}>Lv {level}</Tag>
             <Text type="secondary" style={{ fontSize: 10 }}>{time}</Text>
           </Space>
-        }
-        description={
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Space>
-                    <GiftOutlined style={{ color: '#eb2f96' }} />
-                    <Text strong style={{ color: '#eb2f96' }}>{giftName} x {count}</Text>
-                </Space>
-                <Text type="secondary" style={{ fontSize: 11 }}>¥ {price}</Text>
-            </div>
-        }
-      />
-    </List.Item>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Space>
+                <GiftOutlined style={{ color: '#eb2f96' }} />
+                <Text strong style={{ color: '#eb2f96' }}>{giftName} x {count}</Text>
+            </Space>
+            <Text type="secondary" style={{ fontSize: 11 }}>¥ {price}</Text>
+        </div>
+      </div>
+    </div>
   );
 });
 
 const GiftList = () => {
-    const listRef = useRef(null);
     const giftList = useDanmakuStore(state => state.giftList);
-    const [autoScroll, setAutoScroll] = useState(true);
-
-    // 滚动处理
-    useEffect(() => {
-        if (listRef.current && autoScroll) {
-            listRef.current.scrollTop = listRef.current.scrollHeight;
-        }
-    }, [giftList, autoScroll]);
-
-    // 监听用户手动滚动
-    const handleScroll = () => {
-        if (listRef.current) {
-            const { scrollTop, scrollHeight, clientHeight } = listRef.current;
-            const isBottom = scrollHeight - scrollTop - clientHeight < 10;
-            setAutoScroll(isBottom);
-        }
-    };
+    // 使用动态列表 Hook：最大渲染200条，每次加载30条历史
+    const { listRef, renderList, handleScroll } = useDynamicList(giftList, 50, 30);
 
   return (
     <div style={{ 
@@ -75,11 +60,9 @@ const GiftList = () => {
         onScroll={handleScroll}
         style={{ flex: 1, overflowY: 'auto' }}
       >
-        <List
-            itemLayout="horizontal"
-            dataSource={giftList}
-            renderItem={item => <GiftItem data={item} />}
-        />
+        {renderList.map(item => (
+            <GiftItem key={item.id} data={item} />
+        ))}
       </div>
     </div>
   );

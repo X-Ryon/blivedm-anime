@@ -206,12 +206,14 @@ const ConnectionManager = () => {
       message.success('已断开连接');
   }, [setConnected, setRoomTitle]);
 
-  // 监听登录状态，如果退出登录且当前处于连接状态，则自动断开连接
+  // 监听连接状态，如果变为未连接且 WebSocket 仍存在，则清理 WebSocket
   useEffect(() => {
-    if (!isLoggedIn && isConnected) {
-        handleDisconnect();
+    if (!isConnected && wsRef.current) {
+        console.log('Cleaning up WebSocket because isConnected became false');
+        wsRef.current.close();
+        wsRef.current = null;
     }
-  }, [isLoggedIn, isConnected, handleDisconnect]);
+  }, [isConnected]);
 
   // 组件卸载时断开连接
   useEffect(() => {
@@ -223,7 +225,7 @@ const ConnectionManager = () => {
   }, []);
 
   return (
-    <Card bordered={false} bodyStyle={{ padding: '12px 24px', background: '#f5f5f5', borderRadius: 8 }}>
+    <Card variant="borderless" styles={{ body: { padding: '12px 24px', background: '#f5f5f5', borderRadius: 8 } }}>
       <Space size="middle" style={{ width: '100%' }}>
         <Input 
           prefix={<ApiOutlined />} 
