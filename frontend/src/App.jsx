@@ -11,9 +11,20 @@ function App() {
       theme={{
         algorithm: theme.defaultAlgorithm,
         token: {
+          colorPrimary: '#FB7299',
           borderRadius: 6,
           fontFamily: 'v-sans, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"',
         },
+        components: {
+          Button: {
+            colorPrimary: '#FB7299',
+            algorithm: true,
+          },
+          Checkbox: {
+            colorPrimary: '#FB7299',
+            algorithm: true,
+          }
+        }
       }}
     >
       <AntdApp>

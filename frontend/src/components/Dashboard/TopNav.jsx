@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Button, Avatar, Dropdown, Space, Typography, Tag, Modal, message } from 'antd';
+import { Button, Avatar, Dropdown, Space, Typography, Tag, App } from 'antd';
 import { UserOutlined, SettingOutlined, LogoutOutlined, LoginOutlined, MinusCircleOutlined } from '@ant-design/icons';
 import LoginModal from './LoginModal';
 import useUserStore from '../../store/useUserStore';
@@ -15,6 +15,7 @@ const CachedAvatar = ({ src, size, icon }) => {
 };
 
 const TopNav = ({ onOpenSettings }) => {
+  const { message, modal } = App.useApp();
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [savedUsers, setSavedUsers] = useState([]);
   

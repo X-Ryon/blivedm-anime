@@ -24,10 +24,15 @@ const useDanmakuStore = create((set) => ({
     danmakuList: [],
     giftList: [], // Includes gifts and guards
     scList: [],
+    totalRevenue: 0,
+    
+    // UI State
+    searchText: '',
     
     // Actions
     setConnected: (isConnected, roomId) => set({ isConnected, roomId }),
     setRoomTitle: (roomTitle) => set({ roomTitle }),
+    setSearchText: (searchText) => set({ searchText }),
     
     addDanmaku: (danmaku) => set((state) => {
         // Add unique ID if missing (backend might not provide unique ID for every msg)
@@ -39,7 +44,7 @@ const useDanmakuStore = create((set) => ({
             // Frontend DanmakuItem: username, content, avatar, level, guardLevel (derived)
             username: danmaku.user_name,
             content: danmaku.dm_text,
-            avatar: danmaku.face_img,
+            avatar: danmaku.face_img || '',
             // guardLevel mapping: "舰长"->3, "提督"->2, "总督"->1
             guardLevel: danmaku.privilege_name === "舰长" ? 3 : 
                        danmaku.privilege_name === "提督" ? 2 : 
@@ -49,6 +54,11 @@ const useDanmakuStore = create((set) => ({
     }),
     
     addGift: (gift) => set((state) => {
+        console.log('addGift called with:', gift);
+        console.log('Current totalRevenue:', state.totalRevenue);
+        const price = Number(gift.price) || 0;
+        console.log('Adding price:', price);
+        
         const newItem = {
             ...gift,
             id: gift.id || Date.now() + Math.random(),
@@ -57,14 +67,25 @@ const useDanmakuStore = create((set) => ({
             giftName: gift.gift_type, // Backend sends gift_type
             count: gift.num,
             price: gift.price,
-            avatar: gift.face_img || '', // Backend might not send face_img for all gifts? check schema
+            // avatar: gift.face_img || '', // Removed face_img
+            giftImg: gift.gift_img || '', // Add giftImg
             level: gift.level,
             time: formatTime(gift.timestamp)
         };
-        return { giftList: [...state.giftList, newItem].slice(-200) };
+        const newTotal = state.totalRevenue + price;
+        console.log('New totalRevenue:', newTotal);
+        
+        return { 
+            giftList: [...state.giftList, newItem].slice(-200),
+            totalRevenue: newTotal
+        };
     }),
     
     addSc: (sc) => set((state) => {
+        console.log('addSc called with:', sc);
+        
+        const price = Number(sc.price) || 0;
+        
         const newItem = {
             ...sc,
             id: sc.id || Date.now() + Math.random(),
@@ -72,10 +93,13 @@ const useDanmakuStore = create((set) => ({
             username: sc.user_name,
             content: sc.dm_text, // Backend sends dm_text for SC content
             price: sc.price,
-            avatar: sc.face_img,
+            // avatar: sc.face_img || '', // Removed face_img
             time: formatTime(sc.timestamp)
         };
-        return { scList: [...state.scList, newItem].slice(-100) };
+        return { 
+            scList: [...state.scList, newItem].slice(-100),
+            totalRevenue: state.totalRevenue + price
+        };
     }),
 
     // Gift Metadata
@@ -95,7 +119,8 @@ const useDanmakuStore = create((set) => ({
     clearAll: () => set({ 
         danmakuList: [], 
         giftList: [], 
-        scList: [] 
+        scList: [],
+        totalRevenue: 0
     }),
 
     fetchHistory: async (roomId) => {
@@ -128,7 +153,7 @@ const useDanmakuStore = create((set) => ({
                      giftName: g.gift_type,
                      count: g.num,
                      price: g.price,
-                     avatar: g.face_img || '',
+                     // avatar: g.face_img || '',
                      level: g.level,
                      time: formatTime(g.timestamp)
                  }));
@@ -142,7 +167,7 @@ const useDanmakuStore = create((set) => ({
                      username: s.user_name,
                      content: s.dm_text,
                      price: s.price,
-                     avatar: s.face_img,
+                     // avatar: s.face_img,
                      time: formatTime(s.timestamp)
                  }));
                  set(state => ({ scList: [...scList, ...state.scList].slice(-1000) }));

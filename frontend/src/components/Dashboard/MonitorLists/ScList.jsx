@@ -1,15 +1,45 @@
-import React from 'react';
-import { Avatar, Tag, Typography, Space } from 'antd';
-import { UserOutlined } from '@ant-design/icons';
+import React, { useMemo } from 'react';
+import { Tag, Typography, Space } from 'antd';
 import useDanmakuStore from '../../../store/useDanmakuStore';
-import useCachedImage from '../../../hooks/useCachedImage';
 import useDynamicList from '../../../hooks/useDynamicList';
 
 const { Text } = Typography;
 
+const getScStyle = (price) => {
+  if (price < 50) {
+    // 蓝色 - 49元以下 - 加深
+    return {
+      bg: '#0066ffff', // Blue-4
+      border: '#0061bb', // Blue-6
+      text: '#ffffff'  // Blue-10
+    };
+  } else if (price < 100) {
+    // 绿色 - 50-99元 - 加深
+    return {
+      bg: '#00af17', // Lime-5
+      border: '#005f1d', // Lime-6
+      text: '#ffffff' // Dark Green
+    };
+  } else if (price < 1000) {
+    // 金色 - 100-999元 - 加深
+    return {
+      bg: '#ecc100ff', // Gold-6
+      border: '#976500', // Gold-8
+      text: '#ffffff' // Dark Gold
+    };
+  } else {
+    // 红色 - 1000元以上 - 加深
+    return {
+      bg: '#c92f00', // Red-5
+      border: '#6b0005', // Red-6
+      text: '#ffffff' // Red-10
+    };
+  }
+};
+
 const ScItem = React.memo(({ data }) => {
-  const { username, content, avatar, level, time, price } = data;
-  const avatarUrl = useCachedImage(avatar);
+  const { username, content, level, time, price } = data;
+  const style = getScStyle(Number(price));
   
   return (
     <div style={{ 
@@ -18,23 +48,22 @@ const ScItem = React.memo(({ data }) => {
       alignItems: 'flex-start',
       padding: '0 8px'
     }}>
-      <Avatar icon={<UserOutlined />} src={avatarUrl} size="small" style={{ marginTop: 4, flexShrink: 0 }} />
-      <div style={{ marginLeft: 12, maxWidth: 'calc(100% - 44px)' }}>
+      <div style={{ marginLeft: 0, width: '100%' }}>
         <Space size={4} style={{ marginBottom: 2, display: 'flex', alignItems: 'center' }}>
-          <Text type="secondary" style={{ fontSize: 12 }}>{username}</Text>
+          <Text type="secondary" style={{ fontSize: 14, fontWeight: 'bold' }}>{username}</Text>
           <Tag color="gold" style={{ fontSize: 10, lineHeight: '16px', height: 18, padding: '0 4px', margin: 0 }}>Lv {level}</Tag>
           <Text type="secondary" style={{ fontSize: 10 }}>{time}</Text>
         </Space>
         <div style={{ 
-          background: '#E6F7FF', // 统一蓝色
-          border: '1px solid #91D5FF',
-          borderRadius: '0 12px 12px 12px',
+          background: style.bg,
+          border: `1px solid ${style.border}`,
+          borderRadius: '12px',
           padding: '8px 12px',
           position: 'relative',
           wordBreak: 'break-word'
         }}>
-          <div style={{ fontWeight: 'bold', marginBottom: 4, color: '#096dd9' }}>¥ {price}</div>
-          <Text>{content}</Text>
+          <div style={{ fontWeight: 'bold', marginBottom: 4, color: style.text }}>¥ {price}</div>
+          <Text style={{ color: style.text, fontWeight: 'bold', fontSize: 16 }}>{content}</Text>
         </div>
       </div>
     </div>
@@ -43,8 +72,19 @@ const ScItem = React.memo(({ data }) => {
 
 const ScList = () => {
     const scList = useDanmakuStore(state => state.scList);
+    const searchText = useDanmakuStore(state => state.searchText);
+
+    const filteredList = useMemo(() => {
+        if (!searchText) return scList;
+        const lowerText = searchText.toLowerCase();
+        return scList.filter(item =>
+            (item.content && item.content.toLowerCase().includes(lowerText)) ||
+            (item.username && item.username.toLowerCase().includes(lowerText))
+        );
+    }, [scList, searchText]);
+
     // 使用动态列表 Hook：最大渲染200条，每次加载30条历史
-    const { listRef, renderList, handleScroll } = useDynamicList(scList, 50, 30);
+    const { listRef, renderList, handleScroll } = useDynamicList(filteredList, 50, 30);
 
   return (
     <div style={{ 

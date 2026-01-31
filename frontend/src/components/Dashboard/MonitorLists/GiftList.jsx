@@ -1,6 +1,6 @@
-import React, { useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Tag, Typography } from 'antd';
-import { GiftOutlined } from '@ant-design/icons';
+import { GiftOutlined, EyeOutlined, EyeInvisibleOutlined } from '@ant-design/icons';
 import useDanmakuStore from '../../../store/useDanmakuStore';
 import useCachedImage from '../../../hooks/useCachedImage';
 import useDynamicList from '../../../hooks/useDynamicList';
@@ -67,11 +67,23 @@ const GiftItem = React.memo(({ data }) => {
 
 const GiftList = () => {
     const giftList = useDanmakuStore(state => state.giftList);
+    const searchText = useDanmakuStore(state => state.searchText);
+    const totalRevenue = useDanmakuStore(state => state.totalRevenue);
     const giftMetadata = useDanmakuStore(state => state.giftMetadata);
     const updateGiftMetadata = useDanmakuStore(state => state.updateGiftMetadata);
     
+    const [showRevenue, setShowRevenue] = useState(true);
+
+    const filteredList = useMemo(() => {
+        if (!searchText) return giftList;
+        const lowerText = searchText.toLowerCase();
+        return giftList.filter(item =>
+            (item.username && item.username.toLowerCase().includes(lowerText))
+        );
+    }, [giftList, searchText]);
+
     // 使用动态列表 Hook：最大渲染200条，每次加载30条历史
-    const { listRef, renderList, handleScroll } = useDynamicList(giftList, 50, 30);
+    const { listRef, renderList, handleScroll } = useDynamicList(filteredList, 50, 30);
 
     // Initial fetch for gift metadata if empty
     useEffect(() => {
@@ -101,8 +113,17 @@ const GiftList = () => {
         height: '100%',
         overflow: 'hidden'
     }}>
-      <div style={{ padding: '12px 16px', borderBottom: '1px solid #f0f0f0', fontWeight: 'bold', backgroundColor: '#fafafa' }}>
-        礼物记录
+      <div style={{ padding: '12px 16px', borderBottom: '1px solid #f0f0f0', fontWeight: 'bold', backgroundColor: '#fafafa', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <span>礼物记录</span>
+        <div style={{ display: 'flex', alignItems: 'center', fontSize: 14, fontWeight: 'normal' }}>
+             <span style={{ marginRight: 8, color: '#6e6e6e', fontWeight: 'bold' }}>
+                {showRevenue ? `¥${totalRevenue.toFixed(2)}` : '****'}
+             </span>
+             {showRevenue ? 
+                <EyeOutlined onClick={() => setShowRevenue(false)} style={{ cursor: 'pointer', color: '#8c8c8c' }} /> : 
+                <EyeInvisibleOutlined onClick={() => setShowRevenue(true)} style={{ cursor: 'pointer', color: '#8c8c8c' }} />
+             }
+        </div>
       </div>
       <div 
         ref={listRef}
