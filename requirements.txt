@@ -1,5 +1,3 @@
-# blivedm should be installed from source
-# git+https://github.com/xfgryujk/blivedm.git
 aiohttp
 brotlicffi
 fastapi

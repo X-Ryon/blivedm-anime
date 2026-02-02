@@ -74,7 +74,6 @@ async def get_gift_history(room_id: str = Query(..., description="房间号"), l
                 num=g.gift_num,
                 price=g.price,
                 uid=g.uid,
-                face_img=g.face_img,
                 msg_type="guard" if g.gift_name in ["舰长", "提督", "总督"] else "gift",
                 timestamp=g.create_time.timestamp() if g.create_time else 0.0
             ) for g in gifts
@@ -111,7 +110,6 @@ async def get_sc_history(room_id: str = Query(..., description="房间号"), lim
                 identity=s.identity,
                 price=s.price,
                 uid=s.uid,
-                face_img=s.face_img,
                 msg_type="super_chat",
                 timestamp=s.create_time.timestamp() if s.create_time else 0.0
             ) for s in scs

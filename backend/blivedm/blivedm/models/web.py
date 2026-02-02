@@ -416,6 +416,8 @@ class UserToastV2Message:
     """用户ID"""
     username: str = ''
     """用户名"""
+    face: str = ''
+    """用户头像URL"""
     guard_level: int = 0
     """舰队等级，0非舰队，1总督，2提督，3舰长"""
     num: int = 0  # 可以理解为礼物数量？

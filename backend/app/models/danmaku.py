@@ -34,7 +34,7 @@ class Gift(Base):
     level: Mapped[int] = mapped_column(Integer, default=0)
     privilege_name: Mapped[str] = mapped_column(String(64), default="普通")
     identity: Mapped[str] = mapped_column(String(64), default="普通")
-    face_img: Mapped[str] = mapped_column(String(255), nullable=True)
+    # face_img: Mapped[str] = mapped_column(String(255), nullable=True) # 已移除
     gift_name: Mapped[str] = mapped_column(String(255))
     gift_num: Mapped[int] = mapped_column(Integer, default=1)
     price: Mapped[float] = mapped_column(Float)
@@ -53,7 +53,7 @@ class SuperChat(Base):
     level: Mapped[int] = mapped_column(Integer, default=0)
     privilege_name: Mapped[str] = mapped_column(String(64), default="普通")
     identity: Mapped[str] = mapped_column(String(64), default="普通")
-    face_img: Mapped[str] = mapped_column(String(255), nullable=True)
+    # face_img: Mapped[str] = mapped_column(String(255), nullable=True) # 已移除
     sc_text: Mapped[str] = mapped_column(String(255))
     price: Mapped[float] = mapped_column(Float)
     create_time: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=timezone.now)

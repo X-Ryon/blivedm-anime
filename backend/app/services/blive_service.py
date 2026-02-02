@@ -16,6 +16,8 @@ from backend.app.crud.auth import crud_auth
 from backend.app.crud.room import crud_room
 from backend.database.db import AsyncSessionLocal
 from backend.core.conf import settings
+from backend.app.services.uidinfo_service import uidinfo_service
+from backend.app.services.config_service import config_service
 
 # 身份映射
 PRIVILEGE_MAP = {
@@ -23,6 +25,13 @@ PRIVILEGE_MAP = {
     1: "总督",
     2: "提督",
     3: "舰长"
+}
+
+# 舰队图标映射
+GUARD_ICON_MAP = {
+    1: "https://i0.hdslb.com/bfs/live/1a0d8bc3b8e7e9a031a033e50772719f2f8a8462.png", # 总督
+    2: "https://i0.hdslb.com/bfs/live/232490d3d5272302e12815337583600000000000.png", # 提督
+    3: "https://i0.hdslb.com/bfs/live/232490d3d5272302e12815337583600000000000.png"  # 舰长 (通常舰长和提督图标类似，或根据UI显示不同，这里使用通用图标)
 }
 
 class BilibiliHandler(blivedm.BaseHandler):
@@ -34,6 +43,28 @@ class BilibiliHandler(blivedm.BaseHandler):
         self.room_id = room_id
         self.service = service
         self.save_to_db = save_to_db
+
+    def _get_guard_icon(self, guard_level: int) -> str:
+        """根据配置获取舰队图标"""
+        try:
+            config = config_service.get_config()
+            skins = config.resources.guard_skins
+            
+            icon = ""
+            if guard_level == 1: # 总督
+                icon = skins.governor
+            elif guard_level == 2: # 提督
+                icon = skins.admiral
+            elif guard_level == 3: # 舰长
+                icon = skins.captain
+                
+            if icon:
+                return icon
+        except Exception as e:
+            logger.warning(f"获取舰队图标配置失败: {e}")
+            
+        # Fallback to hardcoded map
+        return GUARD_ICON_MAP.get(guard_level, "")
 
     def _on_danmaku(self, client: blivedm.BLiveClient, message: web_models.DanmakuMessage):
         """
@@ -63,29 +94,55 @@ class BilibiliHandler(blivedm.BaseHandler):
         """
         处理 Super Chat (醒目留言) 消息
         """
-        privilege_name = PRIVILEGE_MAP.get(message.guard_level, "普通")
-        identity = "普通" # SuperChatMessage不包含admin信息，且privilege_type对应guard_level
+        async def process_sc():
+            # 尝试修复缺失的头像
+            if not message.face:
+                try:
+                    logger.info(f"[sc] 用户 {message.uname} ({message.uid}) 头像缺失，尝试获取...")
+                    user_info = await uidinfo_service.get_user_info_by_uid(str(message.uid))
+                    if user_info and user_info.get("face_img"):
+                        message.face = user_info["face_img"]
+                        logger.info(f"[sc] 获取头像成功: {message.face}")
+                except Exception as e:
+                    logger.warning(f"[sc] 获取用户头像失败: {e}")
 
-        resp = dm_schema.DanmakuResponse(
-            user_name=message.uname,
-            level=message.medal_level if message.medal_level else 0,
-            privilege_name=privilege_name,
-            dm_text=message.message,
-            identity=identity,
-            face_img=message.face,
-            price=message.price,
-            uid=str(message.uid),
-            msg_type="super_chat"
-        )
-        logger.info(f"[sc]房间:{self.room_id}，用户名:{message.uname}，sc: {message.message}，价值:{message.price}元")
-        asyncio.create_task(self.service.broadcast(self.room_id, resp))
-        asyncio.create_task(self._save_super_chat(message))
+            privilege_name = PRIVILEGE_MAP.get(message.guard_level, "普通")
+            identity = "普通" # SuperChatMessage不包含admin信息，且privilege_type对应guard_level
+
+            resp = dm_schema.DanmakuResponse(
+                user_name=message.uname,
+                level=message.medal_level if message.medal_level else 0,
+                privilege_name=privilege_name,
+                dm_text=message.message,
+                identity=identity,
+                face_img=message.face,
+                price=message.price,
+                uid=str(message.uid),
+                msg_type="super_chat"
+            )
+            logger.info(f"[sc]房间:{self.room_id}，用户名:{message.uname}，sc: {message.message}，价值:{message.price}元")
+            await self.service.broadcast(self.room_id, resp)
+            await self._save_super_chat(message)
+
+        asyncio.create_task(process_sc())
 
     def _on_gift(self, client: blivedm.BLiveClient, message: web_models.GiftMessage):
         """
         处理礼物消息
         """
-        price = float(message.total_coin)/1000.0
+        # 默认使用 total_coin (总价值)
+        # 注意：total_coin 单位是金瓜子 (1000金瓜子 = 1元)
+        price = float(message.total_coin) / 1000.0
+        
+        # 如果 total_coin 为 0，尝试使用 单价 * 数量
+        if price <= 0 and message.price > 0:
+            price = float(message.price) * message.num / 1000.0
+
+        # 检查货币类型，如果是银瓜子(silver)，通常不计入营收或单独统计
+        # 这里为了准确记录营收，如果是银瓜子，强制设为 0 (或者根据需求保留)
+        # 大部分直播间统计只看金瓜子
+        if message.coin_type == 'silver':
+            price = 0.0
         
         # 修正盲盒礼物价格：盲盒礼物应显示实际获得物品的价值，而非盲盒本身的价格
         # 如果是盲盒礼物 (blind_gift 不为 None)
@@ -105,7 +162,10 @@ class BilibiliHandler(blivedm.BaseHandler):
             num=message.num,
             gift_type=message.gift_name,
             price=price,
-            msg_type="gift"
+            msg_type="gift",
+            uid=str(message.uid),
+            face_img=message.face,
+            gift_img=message.gift_img_basic
         )
         logger.info(f"[礼物]房间:{self.room_id}，用户名:{message.uname}，gift: {message.gift_name}，数量:{message.num}，单价:{price}元")
         asyncio.create_task(self.service.broadcast(self.room_id, resp))
@@ -116,17 +176,27 @@ class BilibiliHandler(blivedm.BaseHandler):
         处理上舰（购买舰长）消息
         """
         guard_name = PRIVILEGE_MAP.get(message.guard_level, "舰队")
-        price=float(message.price) / 1000.0
+        # message.price 是单价(金瓜子)，需要乘以数量(月数)
+        # 1000 金瓜子 = 1 元
+        unit_price = float(message.price) / 1000.0
+        total_price = unit_price * message.num
+        
+        # 获取舰队图标
+        gift_img = self._get_guard_icon(message.guard_level)
+
         resp = dm_schema.GiftResponse(
-            user_name=message.uname,
+            user_name=message.username,
             level=0,
             privilege_name=guard_name,
             gift_type=guard_name,
             num=message.num,
-            price=price,
-            msg_type="guard"
+            price=total_price,
+            uid=str(message.uid),
+            face_img=message.face,
+            msg_type="guard",
+            gift_img=gift_img
         )
-        logger.info(f"[舰队]房间:{self.room_id}，用户名:{message.uname}，舰队: {guard_name}，数量:{message.num}，单价:{price}元")
+        logger.info(f"[舰队]房间:{self.room_id}，用户名:{message.username}，舰队: {guard_name}，数量:{message.num}，总价:{total_price}元")
         asyncio.create_task(self.service.broadcast(self.room_id, resp))
         asyncio.create_task(self._save_guard(message, guard_name))
 
@@ -135,18 +205,26 @@ class BilibiliHandler(blivedm.BaseHandler):
         处理续费舰长消息
         """
         guard_name = PRIVILEGE_MAP.get(message.guard_level, "舰队")
-        price=float(message.price) / 1000.0
+        # message.price 是单价(金瓜子)，需要乘以数量(月数)
+        unit_price = float(message.price) / 1000.0
+        total_price = unit_price * message.num
+        
+        # 获取舰队图标
+        gift_img = self._get_guard_icon(message.guard_level)
+
         resp = dm_schema.GiftResponse(
-            user_name=message.uname,
+            user_name=message.username,
             level=message.medal_level if message.medal_level else 0,
             privilege_name=guard_name,
             gift_type=guard_name,
             num=message.num,
-            price=price,
+            price=total_price,
             uid=str(message.uid),
-            msg_type="guard"
+            face_img=message.face,
+            msg_type="guard",
+            gift_img=gift_img
         )
-        logger.info(f"[舰队]房间:{self.room_id}，用户名:{message.uname}，舰队: {guard_name}，数量:{message.num}，单价:{price}元")
+        logger.info(f"[舰队]房间:{self.room_id}，用户名:{message.username}，舰队: {guard_name}，数量:{message.num}，总价:{total_price}元")
         asyncio.create_task(self.service.broadcast(self.room_id, resp))
         asyncio.create_task(self._save_guard(message, guard_name))
 
@@ -190,7 +268,7 @@ class BilibiliHandler(blivedm.BaseHandler):
                 level=message.medal_level if message.medal_level else 0,
                 privilege_name=privilege_name, 
                 identity="普通", 
-                face_img=message.face,
+                # face_img=message.face, # 已移除
                 sc_text=message.message,
                 price=message.price
             )
@@ -208,7 +286,7 @@ class BilibiliHandler(blivedm.BaseHandler):
                 level=message.medal_level if message.medal_level else 0,
                 privilege_name="普通",
                 identity="普通",
-                face_img=message.face,
+                # face_img=message.face, # 已移除
                 gift_name=message.gift_name,
                 gift_num=message.num,
                 price=price
@@ -235,7 +313,7 @@ class BilibiliHandler(blivedm.BaseHandler):
                 level=level, 
                 privilege_name=privilege_name,
                 identity="普通",
-                face_img=face,
+                # face_img=face, # 已移除
                 gift_name=privilege_name,
                 gift_num=message.num,
                 price=float(message.price) / 1000.0

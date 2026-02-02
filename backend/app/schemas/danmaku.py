@@ -30,6 +30,7 @@ class GiftResponse(BaseModel):
     price: float = Field(default=0.0, description="礼物价值(元)")
     uid: Optional[str] = Field(default=None, description="用户UID")
     face_img: Optional[str] = Field(default=None, description="用户头像")
+    gift_img: Optional[str] = Field(default=None, description="礼物图标")
     msg_type: str = Field(default="gift", description="消息类型: gift, guard")
     timestamp: float = Field(default=0.0, description="创建时间戳")
 
@@ -66,6 +67,7 @@ class SuperChatCreate(BaseModel):
     level: int = Field(default=0, description="粉丝牌等级")
     privilege_name: str = Field(default="普通", max_length=64, description="身份名称")
     identity: str = Field(default="普通", max_length=64, description="直播间身份")
+    # face_img: Optional[str] = Field(default=None, max_length=255, description="用户头像URL") # 已移除
     sc_text: str = Field(..., max_length=255, description="SC内容")
     price: float = Field(default=0.0, description="SC金额")
 
@@ -76,7 +78,7 @@ class GiftCreate(BaseModel):
     level: int = Field(default=0, description="粉丝牌等级")
     privilege_name: str = Field(default="普通", max_length=64, description="身份名称")
     identity: str = Field(default="普通", max_length=64, description="直播间身份")
-    face_img: Optional[str] = Field(default=None, max_length=255, description="用户头像URL")
+    # face_img: Optional[str] = Field(default=None, max_length=255, description="用户头像URL") # 已移除
     gift_name: str = Field(..., max_length=255, description="礼物名称")
     gift_num: int = Field(default=1, description="礼物数量")
     price: float = Field(default=0.0, description="礼物总价值")
