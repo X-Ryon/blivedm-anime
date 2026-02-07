@@ -50,8 +50,17 @@ const ScItem = React.memo(({ data }) => {
     }}>
       <div style={{ marginLeft: 0, width: '100%' }}>
         <Space size={4} style={{ marginBottom: 2, display: 'flex', alignItems: 'center' }}>
-          <Text type="secondary" style={{ fontSize: 14, fontWeight: 'bold' }}>{username}</Text>
-          <Tag color="gold" style={{ fontSize: 10, lineHeight: '16px', height: 18, padding: '0 4px', margin: 0 }}>Lv {level}</Tag>
+          <div style={{ 
+            background: '#f0f2f5', 
+            padding: '2px 8px', 
+            borderRadius: '4px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px'
+          }}>
+            <Text style={{ fontSize: 14, fontWeight: 'bold', color: '#1890ff' }}>{username}</Text>
+            <Tag color="gold" style={{ fontSize: 10, lineHeight: '16px', height: 18, padding: '0 4px', margin: 0 }}>Lv {level}</Tag>
+          </div>
           <Text type="secondary" style={{ fontSize: 10 }}>{time}</Text>
         </Space>
         <div style={{ 

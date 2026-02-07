@@ -19,6 +19,7 @@ const useDanmakuStore = create((set) => ({
     isConnected: false,
     roomId: null,
     roomTitle: "-",
+    anchorName: "-",
     
     // Data Lists
     danmakuList: [],
@@ -32,6 +33,7 @@ const useDanmakuStore = create((set) => ({
     // Actions
     setConnected: (isConnected, roomId) => set({ isConnected, roomId }),
     setRoomTitle: (roomTitle) => set({ roomTitle }),
+    setAnchorName: (anchorName) => set({ anchorName }),
     setSearchText: (searchText) => set({ searchText }),
     
     addDanmaku: (danmaku) => set((state) => {

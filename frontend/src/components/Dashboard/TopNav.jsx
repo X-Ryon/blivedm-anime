@@ -29,8 +29,10 @@ const TopNav = ({ onOpenSettings }) => {
 
   const isConnected = useDanmakuStore(state => state.isConnected);
   const roomTitle = useDanmakuStore(state => state.roomTitle);
+  const anchorName = useDanmakuStore(state => state.anchorName);
   const setConnected = useDanmakuStore(state => state.setConnected);
   const setRoomTitle = useDanmakuStore(state => state.setRoomTitle);
+  const setAnchorName = useDanmakuStore(state => state.setAnchorName);
 
   useEffect(() => {
     fetchConfig();
@@ -92,6 +94,7 @@ const TopNav = ({ onOpenSettings }) => {
             hide();
             setConnected(false, null);
             setRoomTitle("-");
+            setAnchorName("-");
             message.success('已断开连接');
         }
       }
@@ -153,13 +156,20 @@ const TopNav = ({ onOpenSettings }) => {
             <Tag color={isConnected ? 'green' : 'default'} style={{ margin: 0, marginRight: 8 }}>
               {isConnected ? '已连接' : '未连接'}
             </Tag>
-            <Text 
-              type="secondary" 
-              style={{ maxWidth: 200, margin: 0 }} 
-              ellipsis={{ tooltip: roomTitle }}
-            >
-              {roomTitle}
-            </Text>
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <Text 
+                type="secondary" 
+                style={{ maxWidth: 300, margin: 0, fontSize: '14px', lineHeight: '1.2' }} 
+                ellipsis={{ tooltip: roomTitle }}
+              >
+                {roomTitle}
+              </Text>
+              {anchorName && anchorName !== "-" && (
+                 <Text type="secondary" style={{ fontSize: '12px', opacity: 0.8 }}>
+                   主播: {anchorName}
+                 </Text>
+              )}
+            </div>
           </div>
         </Space>
 

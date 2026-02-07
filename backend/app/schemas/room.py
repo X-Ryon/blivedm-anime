@@ -18,6 +18,7 @@ class StartListenResponse(BaseModel):
     stream_url: str = Field(..., description="直播流URL")
     protocol: str = Field(..., description="直播流协议")
     room_title: Optional[str] = Field(default=None, description="直播间标题")
+    anchor_name: Optional[str] = Field(default=None, description="主播名称")
 
 class StopListenResponse(BaseModel):
     message: str = Field(..., description="取消监听成功消息")

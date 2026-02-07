@@ -402,19 +402,21 @@ class BLiveService:
         client.start()
         
         # 获取并保存房间信息
-        title = await self._fetch_and_save_room_info(room_id, session, save_to_db=should_save_to_db)
-        return title
+        info = await self._fetch_and_save_room_info(room_id, session, save_to_db=should_save_to_db)
+        return info
 
-    async def _fetch_and_save_room_info(self, room_id: int, session: Optional[aiohttp.ClientSession] = None, save_to_db: bool = True) -> Optional[str]:
+    async def _fetch_and_save_room_info(self, room_id: int, session: Optional[aiohttp.ClientSession] = None, save_to_db: bool = True) -> Dict[str, Optional[str]]:
         """
         获取并保存房间信息到数据库
         Returns:
-            str: 房间标题
+            Dict: 包含房间标题和主播名称
         """
         url = f"{settings.BILIBILI_API_ROOM_INFO}?room_id={room_id}"
         
         own_session = False
         title = None
+        host_name = None
+        
         if session is None:
             session = aiohttp.ClientSession(headers={'User-Agent': settings.HEADERS['User-Agent']})
             own_session = True
@@ -448,8 +450,8 @@ class BLiveService:
         finally:
             if own_session:
                 await session.close()
-        
-        return title
+                
+        return {"title": title, "host_name": host_name}
 
     async def _fetch_user_name_by_uid(self, uid: int, session: aiohttp.ClientSession) -> str:
         """

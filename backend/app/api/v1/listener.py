@@ -62,13 +62,14 @@ async def start_listen(request: ListenRequest):
     room_id_int = int(request.room_id)
     # user_name 参数已废弃，传递 None
     # 移除 BackgroundTasks，改为直接等待结果以便获取房间标题
-    title = await blive_service.start_listen(room_id_int, None, request.sessdata)
+    info = await blive_service.start_listen(room_id_int, None, request.sessdata)
     
     return {
         "message": f"开始监听房间 {request.room_id}",
         "stream_url": f"/api/ws/{request.room_id}",
         "protocol": "websocket",
-        "room_title": title
+        "room_title": info.get("title"),
+        "anchor_name": info.get("host_name")
     }
 
 @router.post("/stop", response_model=StopListenResponse)

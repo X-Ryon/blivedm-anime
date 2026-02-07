@@ -15,6 +15,7 @@ const ConnectionManager = () => {
   const addSc = useDanmakuStore(state => state.addSc);
   const clearAll = useDanmakuStore(state => state.clearAll);
   const setRoomTitle = useDanmakuStore(state => state.setRoomTitle);
+  const setAnchorName = useDanmakuStore(state => state.setAnchorName);
   const fetchHistory = useDanmakuStore(state => state.fetchHistory);
   
   const [roomId, setRoomId] = useState('');
@@ -74,6 +75,13 @@ const ConnectionManager = () => {
             setRoomTitle(response.room_title);
         } else {
             setRoomTitle(`Room ${finalRoomId}`);
+        }
+        
+        // Update Anchor Name
+        if (response && response.anchor_name) {
+            setAnchorName(response.anchor_name);
+        } else {
+            setAnchorName("-");
         }
 
         // Fetch History if enabled in config
@@ -210,8 +218,9 @@ const ConnectionManager = () => {
       }
       setConnected(false, null);
       setRoomTitle("-");
+      setAnchorName("-");
       message.success('已断开连接');
-  }, [setConnected, setRoomTitle, message]);
+  }, [setConnected, setRoomTitle, setAnchorName, message]);
 
   // 监听连接状态，如果变为未连接且 WebSocket 仍存在，则清理 WebSocket
   useEffect(() => {
